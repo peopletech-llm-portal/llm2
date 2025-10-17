@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import logo from '../assets/peopletechimg.png'; // Adjust path based on your file location
+import logo from '../assets/ptg background.png'; // Adjust path based on your file location
 
 function Navbar() {
   const navigate = useNavigate();
