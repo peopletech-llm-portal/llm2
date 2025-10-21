@@ -1,11 +1,13 @@
 // routes/examRoutes.js
 import express from "express";
 import Exam from "../models/Exam.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+import { requireRole } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-// 🔹 Create new exam (with optional scheduling)..
-router.post("/", async (req, res) => {
+// 🔹 Create new exam (with optional scheduling) - Only Main Admin and Sub Admin
+router.post("/", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), async (req, res) => {
   try {
     const { title, questions, startTime, endTime, duration, examType } = req.body;
 
@@ -18,8 +20,8 @@ router.post("/", async (req, res) => {
   }
 });
 
-// 🔹 Get all exams
-router.get("/", async (req, res) => {
+// 🔹 Get all exams - All authenticated users can view
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const exams = await Exam.find();
     res.json(exams);
@@ -28,8 +30,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 🔹 Get exam by ID
-router.get("/:id", async (req, res) => {
+// 🔹 Get exam by ID - All authenticated users can view
+router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);
     if (!exam) return res.status(404).json({ message: "Exam not found" });
@@ -40,8 +42,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// 🔹 Update exam (title, schedule, questions)
-router.put("/:id", async (req, res) => {
+// 🔹 Update exam (title, schedule, questions) - Only Main Admin and Sub Admin
+router.put("/:id", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), async (req, res) => {
   try {
     const { title, startTime, endTime, questions, duration, examType } = req.body;
     // Prevent editing after start time
@@ -63,8 +65,8 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// 🔹 Delete exam
-router.delete("/:id", async (req, res) => {
+// 🔹 Delete exam - Only Main Admin and Sub Admin
+router.delete("/:id", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), async (req, res) => {
   try {
     const existing = await Exam.findById(req.params.id);
     if (!existing) return res.status(404).json({ message: "Exam not found" });

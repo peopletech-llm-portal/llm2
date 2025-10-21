@@ -37,9 +37,9 @@ function Navbar() {
           <>
             <span className="font-medium">Hi, {user.name}</span>
 
-            {user.role === "admin" ? (
+            {user.role === "MAIN_ADMIN" ? (
               <>
-                <Link to="/admin" className="hover:underline">
+                <Link to="/admin/dashboard" className="hover:underline">
                   Admin Dashboard
                 </Link>
                 <Link to="/admin/students" className="hover:underline">
@@ -50,6 +50,27 @@ function Navbar() {
                 </Link>
                 <Link to="/admin/schedules" className="hover:underline">
                   Schedule Portal
+                </Link>
+              </>
+            ) : user.role === "SUB_ADMIN" ? (
+              <>
+                <Link to="/subadmin/dashboard" className="hover:underline">
+                  Sub Admin Dashboard
+                </Link>
+              </>
+            ) : user.role === "INTERN" ? (
+              <>
+                <Link to="/intern/dashboard" className="hover:underline">
+                  Dashboard
+                </Link>
+                <Link to="/profile" className="hover:underline">
+                  Profile
+                </Link>
+                <Link to="/training" className="hover:underline">
+                  Training Videos
+                </Link>
+                <Link to="/schedules" className="hover:underline">
+                  Schedules
                 </Link>
               </>
             ) : (
@@ -74,20 +95,12 @@ function Navbar() {
             </button>
           </>
         ) : (
-          <>
-            <Link
-              to="/login"
-              className="px-3 py-1 rounded bg-transparent text-white hover:bg-white/10"
-            >
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="px-3 py-1 rounded bg-transparent text-white hover:bg-white/10"
-            >
-              Register
-            </Link>
-          </>
+          <Link
+            to="/login"
+            className="px-3 py-1 rounded bg-transparent text-white hover:bg-white/10"
+          >
+            Login
+          </Link>
         )}
       </div>
     </nav>

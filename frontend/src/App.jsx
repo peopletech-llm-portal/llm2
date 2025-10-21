@@ -3,6 +3,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
+import MainAdminDashboard from "./pages/MainAdminDashboard";
+import SubAdminDashboard from "./pages/SubAdminDashboard";
+import InternDashboard from "./pages/InternDashboard";
 import AdminStudents from "./pages/AdminStudents";
 import AdminStudentProfile from "./pages/AdminStudentProfile";
 import TrainingPortal from "./pages/TrainingPortal";
@@ -22,13 +25,21 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
 
-          {/* Student-only routes */}
+          {/* Intern-only routes */}
+          <Route
+            path="/intern/dashboard"
+            element={
+              <PrivateRoute allowedRoles={["INTERN"]}>
+                <InternDashboard />
+              </PrivateRoute>
+            }
+          />
+
           <Route
             path="/profile"
             element={
-              <PrivateRoute allowedRoles={["student"]}>
+              <PrivateRoute allowedRoles={["INTERN", "student"]}>
                 <Profile />
               </PrivateRoute>
             }
@@ -37,7 +48,7 @@ function App() {
           <Route
             path="/training"
             element={
-              <PrivateRoute allowedRoles={["student"]}>
+              <PrivateRoute allowedRoles={["INTERN", "student"]}>
                 <StudentTrainingView />
               </PrivateRoute>
             }
@@ -46,27 +57,35 @@ function App() {
           <Route
             path="/schedules"
             element={
-              <PrivateRoute allowedRoles={["student"]}>
+              <PrivateRoute allowedRoles={["INTERN", "student"]}>
                 <StudentScheduleView />
               </PrivateRoute>
             }
           />
 
-          {/* Take Exam (student) */}
+          {/* Take Exam (intern/student) */}
           <Route
             path="/exam/:id"
             element={
-              <PrivateRoute allowedRoles={["student"]}>
+              <PrivateRoute allowedRoles={["INTERN", "student"]}>
                 <ExamPage />
               </PrivateRoute>
             }
           />
 
-          {/* Admin-only route */}
+          {/* Main Admin routes */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <PrivateRoute allowedRoles={["MAIN_ADMIN"]}>
+                <MainAdminDashboard />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/admin"
             element={
-              <PrivateRoute allowedRoles={["admin"]}>
+              <PrivateRoute allowedRoles={["MAIN_ADMIN"]}>
                 <AdminDashboard />
               </PrivateRoute>
             }
@@ -74,7 +93,7 @@ function App() {
           <Route
             path="/admin/students"
             element={
-              <PrivateRoute allowedRoles={["admin"]}>
+              <PrivateRoute allowedRoles={["MAIN_ADMIN"]}>
                 <AdminStudents />
               </PrivateRoute>
             }
@@ -82,7 +101,7 @@ function App() {
           <Route
             path="/admin/students/:studentId"
             element={
-              <PrivateRoute allowedRoles={["admin"]}>
+              <PrivateRoute allowedRoles={["MAIN_ADMIN"]}>
                 <AdminStudentProfile />
               </PrivateRoute>
             }
@@ -90,7 +109,7 @@ function App() {
           <Route
             path="/admin/training"
             element={
-              <PrivateRoute allowedRoles={["admin"]}>
+              <PrivateRoute allowedRoles={["MAIN_ADMIN"]}>
                 <TrainingPortal />
               </PrivateRoute>
             }
@@ -98,8 +117,18 @@ function App() {
           <Route
             path="/admin/schedules"
             element={
-              <PrivateRoute allowedRoles={["admin"]}>
+              <PrivateRoute allowedRoles={["MAIN_ADMIN"]}>
                 <SchedulePortal />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Sub Admin routes */}
+          <Route
+            path="/subadmin/dashboard"
+            element={
+              <PrivateRoute allowedRoles={["SUB_ADMIN"]}>
+                <SubAdminDashboard />
               </PrivateRoute>
             }
           />

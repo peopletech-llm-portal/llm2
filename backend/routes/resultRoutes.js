@@ -1,6 +1,8 @@
 import express from "express";
 import Result from "../models/Result.js";
 import Exam from "../models/Exam.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+import { requireRole } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
@@ -8,7 +10,7 @@ const router = express.Router();
  * @route POST /api/results/submit
  * @desc Submit exam answers and calculate score
  */
-router.post("/submit", async (req, res) => {
+router.post("/submit", authMiddleware, async (req, res) => {
   try {
     const { examId, studentId, answers } = req.body;
 
@@ -130,8 +132,8 @@ router.post("/submit", async (req, res) => {
  * @route GET /api/results/:studentId
  * @desc Fetch all results of a student
  */
-// Keep legacy route for compatibility
-router.get("/:studentId", async (req, res) => {
+// Keep legacy route for compatibility - All authenticated users can view their own results
+router.get("/:studentId", authMiddleware, async (req, res) => {
   try {
     const results = await Result.find({ studentId: req.params.studentId })
       .populate("examId", "title examType")
@@ -148,7 +150,7 @@ router.get("/:studentId", async (req, res) => {
  * @route GET /api/results/student/:studentId
  * @desc Fetch all results of a student (explicit path)
  */
-router.get("/student/:studentId", async (req, res) => {
+router.get("/student/:studentId", authMiddleware, async (req, res) => {
   try {
     const results = await Result.find({ studentId: req.params.studentId })
       .populate("examId", "title examType")
@@ -164,12 +166,29 @@ router.get("/student/:studentId", async (req, res) => {
  * @route GET /api/results/detail/:id
  * @desc Fetch a single result with details for admin view
  */
-router.get("/detail/:id", async (req, res) => {
+router.get("/detail/:id", authMiddleware, async (req, res) => {
   try {
     const result = await Result.findById(req.params.id)
       .populate("examId", "title examType questions");
     if (!result) return res.status(404).json({ message: "Result not found" });
     res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error ❌", error });
+  }
+});
+
+/**
+ * @route GET /api/results
+ * @desc Fetch all results for admin view
+ */
+router.get("/", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), async (req, res) => {
+  try {
+    const results = await Result.find()
+      .populate("examId", "title examType")
+      .populate("studentId", "name email")
+      .sort({ createdAt: -1 });
+    res.json(results);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error ❌", error });

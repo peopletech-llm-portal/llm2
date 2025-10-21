@@ -37,10 +37,31 @@ function ExamPage() {
 
   useEffect(() => {
     setMessage("");
-    fetch(`http://localhost:5000/api/exams/${id}`)
-      .then((res) => res.json())
-      .then((data) => setExam(data))
-      .catch(() => setMessage("Failed to load exam ❌"));
+    const token = localStorage.getItem('token');
+    console.log('Fetching exam with ID:', id);
+    console.log('Token available:', !!token);
+    
+    fetch(`http://localhost:5000/api/exams/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+      .then((res) => {
+        console.log('Exam fetch response status:', res.status);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch exam: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log('Exam data received:', data);
+        setExam(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching exam:', error);
+        setMessage(`Failed to load exam ❌: ${error.message}`);
+      });
   }, [id]);
 
   // Initialize timer when exam loads
@@ -205,9 +226,13 @@ function ExamPage() {
     }
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch("http://localhost:5000/api/results/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           examId: id,
           studentId,
@@ -299,6 +324,37 @@ function ExamPage() {
   const currentLanguage = (answers && answers.language) || (exam?.allowedLanguages && exam.allowedLanguages[0]) || "javascript";
   const starterCode = exam?.questions?.[0]?.starterCode || "function solve(input){\n  return input;\n}";
   const currentCode = (answers && answers.code) ?? starterCode;
+
+  // Loading state
+  if (!exam && !message) {
+    return (
+      <div className="min-h-screen bg-black text-white p-6 max-w-4xl mx-auto flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-lg">Loading exam...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (message) {
+    return (
+      <div className="min-h-screen bg-black text-white p-6 max-w-4xl mx-auto flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">❌</div>
+          <h2 className="text-2xl font-bold mb-4 text-red-400">Error Loading Exam</h2>
+          <p className="text-lg mb-6 text-gray-300">{message}</p>
+          <button
+            onClick={() => navigate('/intern/dashboard')}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-6 max-w-4xl mx-auto">
