@@ -22,6 +22,10 @@ function ExamStatusTracking() {
           'Content-Type': 'application/json'
         }
       });
+      
+      if (!examsResponse.ok) {
+        throw new Error('Failed to fetch exams');
+      }
       const examsData = await examsResponse.json();
       setExams(examsData);
 
@@ -32,6 +36,10 @@ function ExamStatusTracking() {
           'Content-Type': 'application/json'
         }
       });
+      
+      if (!internsResponse.ok) {
+        throw new Error('Failed to fetch interns');
+      }
       const internsData = await internsResponse.json();
       setInterns(internsData.filter(user => user.role === 'INTERN'));
 
@@ -42,18 +50,32 @@ function ExamStatusTracking() {
           'Content-Type': 'application/json'
         }
       });
+      
+      if (!resultsResponse.ok) {
+        throw new Error('Failed to fetch results');
+      }
       const resultsData = await resultsResponse.json();
       setExamResults(resultsData);
 
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Set empty arrays to prevent crashes
+      setExams([]);
+      setInterns([]);
+      setExamResults([]);
     } finally {
       setLoading(false);
     }
   };
 
   const getExamStatus = (examId, internId) => {
-    const result = examResults.find(r => r.examId === examId && r.studentId === internId);
+    const result = examResults.find(r => {
+      // Handle both string and object ID comparisons
+      const resultExamId = r.examId?._id || r.examId;
+      const resultStudentId = r.studentId?._id || r.studentId;
+      return resultExamId === examId && resultStudentId === internId;
+    });
+    
     if (result) {
       return {
         status: 'Completed',
@@ -66,7 +88,10 @@ function ExamStatusTracking() {
   };
 
   const getExamCompletionStats = (examId) => {
-    const examResultsForExam = examResults.filter(r => r.examId === examId);
+    const examResultsForExam = examResults.filter(r => {
+      const resultExamId = r.examId?._id || r.examId;
+      return resultExamId === examId;
+    });
     const totalInterns = interns.length;
     const completedCount = examResultsForExam.length;
     return {

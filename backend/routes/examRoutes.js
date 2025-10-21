@@ -30,6 +30,17 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
+// 🔹 Get all exams - Public access for students (fallback route)
+router.get("/public", async (req, res) => {
+  try {
+    const exams = await Exam.find();
+    res.json(exams);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+
 // 🔹 Get exam by ID - All authenticated users can view
 router.get("/:id", authMiddleware, async (req, res) => {
   try {

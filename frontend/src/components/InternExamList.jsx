@@ -9,29 +9,25 @@ function InternExamList() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchUserProfile();
+    // Get user from localStorage like Profile component does
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (savedUser) {
+      console.log("Using saved user from localStorage:", savedUser);
+      setUser(savedUser);
+      // Fetch exam results immediately if user is available
+      fetchExamResults(savedUser);
+    }
+    
     fetchExams();
-    fetchExamResults();
   }, []);
 
-  const fetchUserProfile = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
+  // Fetch exam results when user is loaded
+  useEffect(() => {
+    if (user) {
+      fetchExamResults();
     }
-  };
+  }, [user]);
+
 
   const fetchExams = async () => {
     try {
@@ -45,6 +41,7 @@ function InternExamList() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log("Exams fetched:", data);
         setExams(data);
       }
     } catch (error) {
@@ -54,10 +51,17 @@ function InternExamList() {
     }
   };
 
-  const fetchExamResults = async () => {
+  const fetchExamResults = async (userData = user) => {
     try {
+      const studentId = userData?._id || userData?.id;
+      if (!studentId) {
+        console.log("No student ID found in user object:", userData);
+        return;
+      }
+      
+      console.log("Fetching exam results for studentId:", studentId);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/results/student/${user?.id}`, {
+      const response = await fetch(`http://localhost:5000/api/results/${studentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -66,7 +70,10 @@ function InternExamList() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log("Exam results fetched:", data);
         setExamResults(data);
+      } else {
+        console.error("Failed to fetch exam results:", response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching exam results:', error);
@@ -74,7 +81,19 @@ function InternExamList() {
   };
 
   const getExamStatus = (examId) => {
-    const result = examResults.find(r => r.examId === examId);
+    console.log("Getting exam status for examId:", examId, "type:", typeof examId);
+    console.log("Available exam results:", examResults);
+    
+    const result = examResults.find(r => {
+      const resultExamId = r.examId?._id || r.examId;
+      console.log("Comparing resultExamId:", resultExamId, "type:", typeof resultExamId, "with examId:", examId);
+      console.log("Strict equality:", resultExamId === examId);
+      console.log("String equality:", String(resultExamId) === String(examId));
+      return resultExamId === examId;
+    });
+    
+    console.log("Found result:", result);
+    
     if (result) {
       return {
         status: 'Completed',
@@ -132,6 +151,7 @@ function InternExamList() {
       ) : (
         <div className="space-y-4">
           {exams.map(exam => {
+            console.log("Rendering exam:", exam.title, "with ID:", exam._id);
             const status = getExamStatus(exam._id);
             const available = isExamAvailable(exam);
             

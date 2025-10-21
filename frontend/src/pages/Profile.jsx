@@ -12,28 +12,64 @@ function Profile() {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     const token = localStorage.getItem("token");
 
+
     if (savedUser) setUser(savedUser);
 
     const fetchData = async () => {
       try {
-        // Fetch all exams (no auth required)
-        const examRes = await axios.get("http://localhost:5000/api/exams");
-        setExams(examRes.data);
+        setLoading(true);
+        setError("");
+        
+
+        // Fetch all exams with proper error handling and authentication
+        try {
+          const examRes = await axios.get("http://localhost:5000/api/exams", {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (examRes.data) {
+            setExams(examRes.data);
+          }
+        } catch (examErr) {
+          console.error("Failed to fetch exams with auth, trying public route:", examErr);
+          // Fallback to public route if authenticated route fails
+          try {
+            const publicExamRes = await axios.get("http://localhost:5000/api/exams/public");
+            if (publicExamRes.data) {
+              setExams(publicExamRes.data);
+            }
+          } catch (publicErr) {
+            console.error("Failed to fetch exams from public route:", publicErr);
+            throw new Error("Failed to fetch exams");
+          }
+        }
 
         // Fetch student results only if logged in
         const studentId = savedUser?._id || savedUser?.id;
-        if (studentId) {
-          const resultRes = await axios.get(
-            `http://localhost:5000/api/results/${studentId}`,
-            token
-              ? { headers: { Authorization: `Bearer ${token}` } }
-              : undefined
-          );
-          setResults(resultRes.data);
+        if (studentId && token) {
+          try {
+            const resultRes = await axios.get(
+              `http://localhost:5000/api/results/${studentId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (resultRes.data) {
+              setResults(resultRes.data);
+            }
+          } catch (resultErr) {
+            console.error("Failed to fetch results:", resultErr);
+            // Don't set error for results, just log it
+            setResults([]);
+          }
+        } else {
+          setResults([]);
         }
       } catch (err) {
         console.error("❌ Failed to fetch profile data:", err);
         setError("Failed to load data ❌");
+        setExams([]);
+        setResults([]);
       } finally {
         setLoading(false);
       }
@@ -47,7 +83,10 @@ function Profile() {
   // Map results by examId for quick lookup
   const resultMap = {};
   results.forEach((r) => {
-    resultMap[r.examId?._id || r.examId] = r;
+    const examId = r.examId?._id || r.examId;
+    if (examId) {
+      resultMap[examId] = r;
+    }
   });
 
   return (

@@ -250,7 +250,10 @@ function ExamPage() {
         // Exit fullscreen after submit
         exitFullscreenIfActive();
         // Redirect to profile after short delay so result appears there
-        setTimeout(() => navigate("/profile"), 800);
+        setTimeout(() => {
+          // Clear any cached data and refresh
+          window.location.href = "/profile";
+        }, 2000);
       } else {
         setMessage(data.message || "Submission failed ❌");
       }

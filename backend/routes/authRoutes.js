@@ -15,7 +15,8 @@ function authMiddleware(req, res, next) {
   if (!token) return res.status(401).json({ message: "No token, authorization denied" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const jwtSecret = process.env.JWT_SECRET || "default-secret-key-for-development";
+    const decoded = jwt.verify(token, jwtSecret);
     req.user = decoded; // attach user info { id, role }
     next();
   } catch (err) {
@@ -135,9 +136,10 @@ router.post("/login", async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     // Create token with role
+    const jwtSecret = process.env.JWT_SECRET || "default-secret-key-for-development";
     const token = jwt.sign(
       { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: "24h" }
     );
 

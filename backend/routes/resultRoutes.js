@@ -135,10 +135,12 @@ router.post("/submit", authMiddleware, async (req, res) => {
 // Keep legacy route for compatibility - All authenticated users can view their own results
 router.get("/:studentId", authMiddleware, async (req, res) => {
   try {
+    console.log("Fetching results for studentId:", req.params.studentId);
     const results = await Result.find({ studentId: req.params.studentId })
       .populate("examId", "title examType")
       .sort({ createdAt: -1 });
 
+    console.log("Found results:", results);
     res.json(results);
   } catch (error) {
     console.error(error);

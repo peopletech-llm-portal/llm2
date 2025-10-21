@@ -27,10 +27,17 @@ function ExamManagement() {
           'Content-Type': 'application/json'
         }
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
-      setExams(data);image.png
+      setExams(data);
     } catch (err) {
+      console.error('Error fetching exams:', err);
       setError("Failed to fetch exams ❌");
+      setExams([]); // Set empty array to prevent crashes
     }
   };
 

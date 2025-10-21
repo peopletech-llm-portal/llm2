@@ -1,11 +1,19 @@
 [
   {
-    "employeeId": "T1917",
-    "fullName": "deepak",
-    "username": "Deepak",
-    "contactNumber": "9492711150",
-    "password": "$2b$10$ZZ/WxUvAnN5L933l5RfyvOcHbBc0ZlD25kJE70sLQsst6LQObrAYa",
-    "createdBy": "68f75dcdd8f6e3160c92371e",
-    "createdAt": "2025-10-21T11:06:12.343Z"
+    "employeeId": "INT001",
+    "fullName": "Test Intern",
+    "username": "testintern",
+    "contactNumber": "9876543210",
+    "password": "$2b$10$K3vgIUHjDSWdCDoeuCZK5.4NtJg1crzrWrIvKZbJezct0bKLq1yUa",
+    "createdAt": "2025-10-21T12:45:26.610Z"
+  },
+  {
+    "employeeId": "T1945",
+    "fullName": "HarshadNani",
+    "username": "jeevan@gmail.com",
+    "contactNumber": "6301060151",
+    "password": "$2b$10$Suii6m15ZLn4lAqBQs7qK.Obpy8ToQRY5//E91j7vi4RyHdJwLwBO",
+    "createdBy": "68f768c7c19182865690172b",
+    "createdAt": "2025-10-21T14:17:39.196Z"
   }
 ]
