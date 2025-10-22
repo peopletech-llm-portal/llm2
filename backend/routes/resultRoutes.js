@@ -23,6 +23,14 @@ router.post("/submit", authMiddleware, async (req, res) => {
     const exam = await Exam.findById(examId);
     if (!exam) return res.status(404).json({ message: "Exam not found" });
 
+    // Check if student has already submitted this exam
+    const existingResult = await Result.findOne({ examId, studentId });
+    if (existingResult) {
+      return res.status(400).json({ 
+        message: "You have already submitted this exam. Only one submission per exam is allowed." 
+      });
+    }
+
     // MCQ vs Theory handling
     let score = 0;
     let total = exam.questions.length;
@@ -141,7 +149,11 @@ router.get("/:studentId", authMiddleware, async (req, res) => {
       .sort({ createdAt: -1 });
 
     console.log("Found results:", results);
-    res.json(results);
+    
+    // Filter out results where the exam has been deleted (examId is null after populate)
+    const validResults = results.filter(result => result.examId !== null);
+    
+    res.json(validResults);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error ❌", error });
@@ -157,7 +169,11 @@ router.get("/student/:studentId", authMiddleware, async (req, res) => {
     const results = await Result.find({ studentId: req.params.studentId })
       .populate("examId", "title examType")
       .sort({ createdAt: -1 });
-    res.json(results);
+    
+    // Filter out results where the exam has been deleted (examId is null after populate)
+    const validResults = results.filter(result => result.examId !== null);
+    
+    res.json(validResults);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error ❌", error });

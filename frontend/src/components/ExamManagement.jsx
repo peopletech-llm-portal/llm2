@@ -26,6 +26,8 @@ export function ExamManagement() {
   const [duration, setDuration] = useState(60);
   const [editExamId, setEditExamId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  // Theory exam specific states
+  const [theoryPrompt, setTheoryPrompt] = useState("");
 
   // Reset form
   const resetForm = () => {
@@ -68,6 +70,7 @@ export function ExamManagement() {
       cpp: false,
       java: false
     });
+    setTheoryPrompt("");
     setError('');
     setSuccess('');
   };
@@ -265,6 +268,43 @@ export function ExamManagement() {
             </div>
           )}
 
+          {/* Theory Builder */}
+          {examType === 'theory' && (
+            <div className="mb-4 p-4 bg-white rounded-lg border">
+              <h4 className="text-md font-medium text-gray-900 mb-3">Add Theory Question</h4>
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
+                <textarea value={theoryPrompt} onChange={e => setTheoryPrompt(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="3" placeholder="Enter theory question prompt" />
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => {
+                  setError(""); setSuccess("");
+                  if (!theoryPrompt.trim()) { setError("Question text is required"); return; }
+                  // Store theory as question with placeholder option to satisfy schema
+                  const newItem = { question: theoryPrompt.trim(), options: ["(long answer)"], correctAnswer: 0 };
+                  setQuestionsDraft(prev => [...prev, newItem]);
+                  setTheoryPrompt("");
+                  setSuccess("Theory question added ✅");
+                }} className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">Add Question</button>
+                {questionsDraft.length > 0 && (
+                  <span className="text-sm text-gray-600">Questions: {questionsDraft.length}</span>
+                )}
+              </div>
+              {questionsDraft.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {questionsDraft.map((q, idx) => (
+                    <div key={idx} className="p-3 bg-gray-100 rounded-lg flex justify-between items-start">
+                      <p className="font-medium text-gray-900 mr-3">{idx + 1}. {q.question}</p>
+                      <button onClick={() => handleRemoveQuestion(idx)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Coding Builder */}
           {examType === 'coding' && (
             <div className="mb-4 p-4 bg-white rounded-lg border">
@@ -364,13 +404,15 @@ export function ExamManagement() {
                   <div key={index} className="p-3 bg-gray-100 rounded-lg flex justify-between items-start">
                     <div className="flex-1">
                       <p className="font-medium text-gray-900">{q.question}</p>
-                      <div className="mt-1 text-sm text-gray-600">
-                        {q.options.map((option, optIndex) => (
-                          <span key={optIndex} className={optIndex === q.correctAnswer ? 'font-bold text-green-600' : ''}>
-                            {String.fromCharCode(65 + optIndex)}. {option}{optIndex === q.correctAnswer && ' ✓'}{" "}
-                          </span>
-                        ))}
-                      </div>
+                      {examType === 'mcq' && (
+                        <div className="mt-1 text-sm text-gray-600">
+                          {q.options.map((option, optIndex) => (
+                            <span key={optIndex} className={optIndex === q.correctAnswer ? 'font-bold text-green-600' : ''}>
+                              {String.fromCharCode(65 + optIndex)}. {option}{optIndex === q.correctAnswer && ' ✓'}{" "}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <button onClick={() => handleRemoveQuestion(index)}
                       className="text-red-600 hover:text-red-800 ml-2">Remove</button>

@@ -167,6 +167,11 @@ function InternExamList() {
             const status = getExamStatus(exam._id);
             const available = isExamAvailable(exam);
             
+            // Don't show completed exams in available exams list
+            if (status.status === 'Completed') {
+              return null;
+            }
+            
             return (
               <div key={exam._id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex justify-between items-start">

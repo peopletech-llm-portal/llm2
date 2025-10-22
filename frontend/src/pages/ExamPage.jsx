@@ -1,5 +1,5 @@
 // src/pages/ExamPage.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { runCodeWithJudge0, judge0LanguageIdFor } from "../services/judge0";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -33,6 +33,7 @@ function ExamPage() {
   const [runInput, setRunInput] = useState("");
   const [runningSamples, setRunningSamples] = useState(false);
   const [sampleResults, setSampleResults] = useState([]);
+  const [currentTheoryIndex, setCurrentTheoryIndex] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -310,7 +311,7 @@ function ExamPage() {
     setRunningSamples(false);
   };
 
-  if (!exam) return <p className="p-4">Loading exam...</p>;
+  // unified loading UI below handles this case
 
   // Progress bar calculations
   const answeredCount = Object.keys(answers).length;
@@ -420,18 +421,37 @@ function ExamPage() {
       </div>
 
       {exam.examType === "theory"
-        ? exam.questions.map((q, qIndex) => (
-            <div key={qIndex} className="mb-8 bg-gray-900 p-6 rounded-xl border border-gray-700 hover:border-gray-600 transition-all duration-300">
-              <p className="font-semibold mb-4 text-lg text-white">{qIndex + 1}. {q.question}</p>
-              <textarea
-                className="w-full border border-gray-600 bg-gray-800 text-white rounded-lg p-4 h-40 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300"
-                placeholder="Type your answer here..."
-                value={answers[qIndex] ?? ""}
-                onChange={(e) => setAnswers((prev) => ({ ...prev, [qIndex]: e.target.value }))}
-              />
+        ? (
+          <div className="mb-8 bg-gray-900 p-6 rounded-xl border border-gray-700 hover:border-gray-600 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="font-semibold text-lg text-white">Question {currentTheoryIndex + 1} of {totalQuestions}</p>
+              <div className="space-x-2">
+                <button
+                  className="px-3 py-2 bg-gray-800 text-white rounded disabled:opacity-50 border border-gray-600"
+                  disabled={currentTheoryIndex === 0}
+                  onClick={() => setCurrentTheoryIndex((i) => Math.max(0, i - 1))}
+                >Previous</button>
+                <button
+                  className="px-3 py-2 bg-gray-800 text-white rounded disabled:opacity-50 border border-gray-600"
+                  disabled={currentTheoryIndex >= totalQuestions - 1}
+                  onClick={() => setCurrentTheoryIndex((i) => Math.min(totalQuestions - 1, i + 1))}
+                >Next</button>
+              </div>
             </div>
-          ))
+            <div className="mb-4 p-4 border border-gray-600 rounded-lg bg-gray-800 text-gray-200 whitespace-pre-wrap">
+              {exam.questions[currentTheoryIndex]?.question}
+            </div>
+            {/* Simple editor for long-form answers */}
+            <textarea
+              className="w-full border border-gray-600 bg-gray-800 text-white rounded-lg p-4 h-64 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300"
+              placeholder="Type your answer here..."
+              value={answers[currentTheoryIndex] ?? ""}
+              onChange={(e) => setAnswers((prev) => ({ ...prev, [currentTheoryIndex]: e.target.value }))}
+            />
+          </div>
+        )
         : exam.examType === "coding" ? (
+          <>
           <div className="mb-8 w-full max-w-[1920px] mx-auto">
             <div className="flex flex-col lg:flex-row w-full">
               {/* Left section - 35% width on large screens */}
@@ -616,7 +636,7 @@ function ExamPage() {
                 </ul>
               </div>
             )}
-          </div>
+          </>
         ) : exam.questions.map((q, qIndex) => (
             <div key={qIndex} className="mb-8 bg-gray-900 p-6 rounded-xl border border-gray-700 hover:border-gray-600 transition-all duration-300">
               <p className="font-semibold mb-4 text-lg text-white">

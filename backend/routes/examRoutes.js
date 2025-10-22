@@ -81,9 +81,17 @@ router.delete("/:id", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), 
   try {
     const existing = await Exam.findById(req.params.id);
     if (!existing) return res.status(404).json({ message: "Exam not found" });
-    // Allow delete anytime per requirement; optionally guard after start if needed
+    
+    // Import Result model for cascading deletion
+    const Result = (await import("../models/Result.js")).default;
+    
+    // Delete all associated results first (cascading deletion)
+    await Result.deleteMany({ examId: req.params.id });
+    console.log(`Deleted all results for exam ${req.params.id}`);
+    
+    // Then delete the exam
     await existing.deleteOne();
-    res.json({ message: "Exam deleted ✅" });
+    res.json({ message: "Exam and all associated results deleted ✅" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
