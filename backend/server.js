@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import examRoutes from "./routes/examRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
 import trainingRoutes from "./routes/trainingRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
@@ -22,6 +23,7 @@ app.use("/api/schedule", scheduleRoutes);
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 
