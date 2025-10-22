@@ -18,7 +18,19 @@ function InternExamList() {
       fetchExamResults(savedUser);
     }
     
+    // Initial fetch
     fetchExams();
+    
+    // Set up periodic refresh every 30 seconds to check for deleted exams
+    const refreshInterval = setInterval(() => {
+      fetchExams();
+      if (user) {
+        fetchExamResults();
+      }
+    }, 30000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(refreshInterval);
   }, []);
 
   // Fetch exam results when user is loaded
@@ -236,7 +248,7 @@ function InternExamList() {
               return (
                 <div key={result._id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
                   <div>
-                    <span className="font-medium">{exam?.title || 'Unknown Exam'}</span>
+                    <span className="font-medium">{exam?.title || result.examId?.title || 'Unknown Exam'}</span>
                     <span className="text-sm text-gray-600 ml-2">({result.examType.toUpperCase()})</span>
                   </div>
                   <div className="text-right">

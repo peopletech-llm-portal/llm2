@@ -50,14 +50,32 @@ router.post("/register", authMiddleware, canCreateRole, async (req, res) => {
       }
     }
 
-    // Check existing user by email
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "User with this email already exists" });
+    // Check for duplicate email
+    const existingUserByEmail = await User.findOne({ email });
+    if (existingUserByEmail) return res.status(400).json({ message: "Email already registered" });
+
+    // Check for duplicate username if provided
+    if (username) {
+      const existingUserByUsername = await User.findOne({ username });
+      if (existingUserByUsername) return res.status(400).json({ message: "Username already taken" });
+    }
+
+    // Check for duplicate mobile number if provided
+    if (contactNumber) {
+      const existingUserByMobile = await User.findOne({ contactNumber });
+      if (existingUserByMobile) return res.status(400).json({ message: "Mobile number already registered" });
+    }
 
     // Check existing employee ID for interns
     if (role === 'INTERN') {
       const existingEmployee = await User.findOne({ employeeId });
       if (existingEmployee) return res.status(400).json({ message: "Employee ID already exists" });
+      
+      // Check for duplicate company email for interns
+      if (companyEmail) {
+        const existingCompanyEmail = await User.findOne({ companyEmail });
+        if (existingCompanyEmail) return res.status(400).json({ message: "Company email already registered" });
+      }
     }
 
     // Hash password

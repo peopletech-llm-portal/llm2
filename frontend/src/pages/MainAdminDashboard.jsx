@@ -17,6 +17,7 @@ function MainAdminDashboard() {
     contactNumber: '',
     username: ''
   });
+  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
@@ -54,6 +55,9 @@ function MainAdminDashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Clear previous errors
+    setErrors({});
+    
     try {
       const token = localStorage.getItem('token');
       const url = editingUser 
@@ -86,6 +90,22 @@ function MainAdminDashboard() {
           username: ''
         });
         fetchUsers();
+      } else {
+        const errorData = await response.json();
+        if (errorData.message) {
+          // Handle specific validation errors
+          if (errorData.message === "Email already registered") {
+            setErrors(prev => ({ ...prev, email: errorData.message }));
+          } else if (errorData.message === "Username already taken") {
+            setErrors(prev => ({ ...prev, username: errorData.message }));
+          } else if (errorData.message === "Mobile number already registered") {
+            setErrors(prev => ({ ...prev, contactNumber: errorData.message }));
+          } else if (errorData.message === "Employee ID already exists") {
+            setErrors(prev => ({ ...prev, employeeId: errorData.message }));
+          } else if (errorData.message === "Company email already registered") {
+            setErrors(prev => ({ ...prev, companyEmail: errorData.message }));
+          }
+        }
       }
     } catch (error) {
       console.error('Error saving user:', error);
@@ -259,9 +279,10 @@ function MainAdminDashboard() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     required
                   />
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
 
                 <div>
@@ -316,9 +337,10 @@ function MainAdminDashboard() {
                         name="employeeId"
                         value={formData.employeeId}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full border ${errors.employeeId ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         required
                       />
+                      {errors.employeeId && <p className="text-red-500 text-sm mt-1">{errors.employeeId}</p>}
                     </div>
 
                     <div>
@@ -328,9 +350,10 @@ function MainAdminDashboard() {
                         name="companyEmail"
                         value={formData.companyEmail}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full border ${errors.companyEmail ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         required
                       />
+                      {errors.companyEmail && <p className="text-red-500 text-sm mt-1">{errors.companyEmail}</p>}
                     </div>
 
                     <div>
@@ -351,22 +374,24 @@ function MainAdminDashboard() {
                         name="contactNumber"
                         value={formData.contactNumber}
                         onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full border ${errors.contactNumber ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         required
                       />
+                      {errors.contactNumber && <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                      <input
-                        type="text"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    className={`w-full border ${errors.username ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    required
+                  />
+                  {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
+                </div>
                   </>
                 )}
 

@@ -80,6 +80,46 @@ router.put("/users/:id", authMiddleware, canManageUser, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Check for duplicate email if changed
+    if (email && email !== user.email) {
+      const existingUserByEmail = await User.findOne({ email, _id: { $ne: user._id } });
+      if (existingUserByEmail) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+    }
+
+    // Check for duplicate username if changed
+    if (username && username !== user.username) {
+      const existingUserByUsername = await User.findOne({ username, _id: { $ne: user._id } });
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+    }
+
+    // Check for duplicate mobile number if changed
+    if (contactNumber && contactNumber !== user.contactNumber) {
+      const existingUserByMobile = await User.findOne({ contactNumber, _id: { $ne: user._id } });
+      if (existingUserByMobile) {
+        return res.status(400).json({ message: "Mobile number already registered" });
+      }
+    }
+
+    // Check for duplicate employee ID if changed
+    if (employeeId && employeeId !== user.employeeId) {
+      const existingEmployeeId = await User.findOne({ employeeId, _id: { $ne: user._id } });
+      if (existingEmployeeId) {
+        return res.status(400).json({ message: "Employee ID already exists" });
+      }
+    }
+
+    // Check for duplicate company email if changed
+    if (companyEmail && companyEmail !== user.companyEmail) {
+      const existingCompanyEmail = await User.findOne({ companyEmail, _id: { $ne: user._id } });
+      if (existingCompanyEmail) {
+        return res.status(400).json({ message: "Company email already registered" });
+      }
+    }
+
     // Update basic fields
     if (name) user.name = name;
     if (email) user.email = email;
