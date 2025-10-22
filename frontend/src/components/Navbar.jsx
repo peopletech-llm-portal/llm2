@@ -1,8 +1,10 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from "react";//k
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import logo from '../assets/image.png'; // your logo path
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user"));
 
   const handleLogout = () => {
@@ -11,40 +13,94 @@ function Navbar() {
     navigate("/login");
   };
 
-  return (
-    <nav className="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md">
-      <h1 className="text-xl font-bold cursor-pointer" onClick={() => navigate("/")}>
-        🎓 Exam Portal
-      </h1>
+  const isHome = location.pathname === "/";
 
+  return (
+    <nav
+      className={`${
+        isHome
+          ? "bg-black/80 backdrop-blur absolute top-0 left-0 w-full z-50"
+          : "bg-black shadow-md"
+      } text-white p-4 flex justify-between items-center`}
+    >
+      {/* Logo */}
+      <img
+        src={logo}
+        alt="Logo"
+        className="cursor-pointer w-28 sm:w-28 md:w-32 drop-shadow" // responsive width
+        onClick={() => navigate("/")}
+      />
+
+      {/* Navigation Links / User */}
       <div className="flex items-center space-x-4">
         {user ? (
           <>
             <span className="font-medium">Hi, {user.name}</span>
 
-            {user.role === "admin" ? (
+            {user.role === "MAIN_ADMIN" ? (
               <>
-                <Link to="/admin" className="hover:underline">Admin Dashboard</Link>
-                <Link to="/admin/students" className="hover:underline">Students</Link>
+                <Link to="/admin/dashboard" className="hover:underline">
+                  Admin Dashboard
+                </Link>
+                <Link to="/admin/students" className="hover:underline">
+                  Students
+                </Link>
+                <Link to="/admin/training" className="hover:underline">
+                  Training Portal
+                </Link>
+                <Link to="/admin/schedules" className="hover:underline">
+                  Schedule Portal
+                </Link>
+              </>
+            ) : user.role === "SUB_ADMIN" ? (
+              <>
+                <Link to="/subadmin/dashboard" className="hover:underline">
+                  Sub Admin Dashboard
+                </Link>
+              </>
+            ) : user.role === "INTERN" ? (
+              <>
+                <Link to="/intern/dashboard" className="hover:underline">
+                  Dashboard
+                </Link>
+                <Link to="/profile" className="hover:underline">
+                  Profile
+                </Link>
+                <Link to="/training" className="hover:underline">
+                  Training Videos
+                </Link>
+                <Link to="/schedules" className="hover:underline">
+                  Schedules
+                </Link>
               </>
             ) : (
               <>
-                <Link to="/profile" className="hover:underline">Profile</Link>
+                <Link to="/profile" className="hover:underline">
+                  Profile
+                </Link>
+                <Link to="/training" className="hover:underline">
+                  Training Videos
+                </Link>
+                <Link to="/schedules" className="hover:underline">
+                  Schedules
+                </Link>
               </>
             )}
 
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-700 px-3 py-1 rounded"
+              className="px-3 py-1 rounded border border-white/30 bg-transparent text-white hover:bg-white/10"
             >
               Logout
             </button>
           </>
         ) : (
-          <>
-            <Link to="/login" className="hover:underline">Login</Link>
-            <Link to="/register" className="hover:underline">Register</Link>
-          </>
+          <Link
+            to="/login"
+            className="px-3 py-1 rounded bg-transparent text-white hover:bg-white/10"
+          >
+            Login
+          </Link>
         )}
       </div>
     </nav>

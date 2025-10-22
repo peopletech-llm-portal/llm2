@@ -11,7 +11,15 @@ function PrivateRoute({ children, allowedRoles }) {
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // role not allowed → redirect based on role
-    return <Navigate to={user.role === "admin" ? "/admin" : "/profile"} />;
+    if (user.role === "MAIN_ADMIN") {
+      return <Navigate to="/admin/dashboard" />;
+    } else if (user.role === "SUB_ADMIN") {
+      return <Navigate to="/subadmin/dashboard" />;
+    } else if (user.role === "INTERN") {
+      return <Navigate to="/intern/dashboard" />;
+    } else {
+      return <Navigate to="/profile" />;
+    }
   }
 
   return children;

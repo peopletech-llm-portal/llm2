@@ -41,5 +41,8 @@ const resultSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Create compound index to prevent duplicate submissions
+resultSchema.index({ examId: 1, studentId: 1 }, { unique: true });
+
 const Result = mongoose.model("Result", resultSchema);
 export default Result;
