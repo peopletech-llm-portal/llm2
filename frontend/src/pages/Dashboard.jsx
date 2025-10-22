@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Dashboard = () => {
   const [exams, setExams] = useState([]);
@@ -8,7 +9,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchExams = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/exams");
+        const res = await fetch(`${API_URL}/api/exams`);
         const data = await res.json();
         setExams(data);
       } catch (err) {

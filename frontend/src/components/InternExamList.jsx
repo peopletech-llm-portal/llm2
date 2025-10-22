@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function InternExamList() {
   const [exams, setExams] = useState([]);
@@ -44,7 +45,7 @@ function InternExamList() {
   const fetchExams = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/exams', {
+      const response = await fetch(`${API_URL}/api/exams`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -73,7 +74,7 @@ function InternExamList() {
       
       console.log("Fetching exam results for studentId:", studentId);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/results/${studentId}`, {
+      const response = await fetch(`${API_URL}/api/results/${studentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

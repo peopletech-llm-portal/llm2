@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -23,7 +24,7 @@ function Profile() {
 
         // Fetch all exams with proper error handling and authentication
         try {
-          const examRes = await axios.get("http://localhost:5000/api/exams", {
+          const examRes = await axios.get(`${API_URL}/api/exams`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -36,7 +37,7 @@ function Profile() {
           console.error("Failed to fetch exams with auth, trying public route:", examErr);
           // Fallback to public route if authenticated route fails
           try {
-            const publicExamRes = await axios.get("http://localhost:5000/api/exams/public");
+            const publicExamRes = await axios.get(`${API_URL}/api/exams/public`);
             if (publicExamRes.data) {
               setExams(publicExamRes.data);
             }
@@ -51,7 +52,7 @@ function Profile() {
         if (studentId && token) {
           try {
             const resultRes = await axios.get(
-              `http://localhost:5000/api/results/${studentId}`,
+              `${API_URL}/api/results/${studentId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             if (resultRes.data) {

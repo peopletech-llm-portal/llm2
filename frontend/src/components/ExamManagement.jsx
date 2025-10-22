@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+const API_URL = import.meta.env.VITE_API_URL;
 
 export function ExamManagement() {
   const [exams, setExams] = useState([]);
@@ -79,7 +80,7 @@ export function ExamManagement() {
   const fetchExams = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch("http://localhost:5000/api/exams", {
+      const res = await fetch(`${API_URL}/api/exams`, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -124,7 +125,7 @@ export function ExamManagement() {
         endTime: endTime || null,
         duration: duration ? parseInt(duration) : null
       };
-      const res = await fetch("http://localhost:5000/api/exams", {
+      const res = await fetch(`${API_URL}/api/exams`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(examData)
@@ -152,7 +153,7 @@ export function ExamManagement() {
         endTime: endTime || null,
         duration: duration ? parseInt(duration) : null
       };
-      const res = await fetch(`http://localhost:5000/api/exams/${editExamId}`, {
+      const res = await fetch(`${API_URL}/api/exams/${editExamId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(examData)
@@ -170,7 +171,7 @@ export function ExamManagement() {
     if (!window.confirm("Are you sure you want to delete this exam?")) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/exams/${examId}`, {
+      const res = await fetch(`${API_URL}/api/exams/${examId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });

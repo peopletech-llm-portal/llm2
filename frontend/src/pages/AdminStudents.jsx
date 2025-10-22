@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+const API_URL = import.meta.env.VITE_API_URL;
 
 function AdminStudents() {
   const [students, setStudents] = useState([]);
@@ -8,7 +9,7 @@ function AdminStudents() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch("http://localhost:5000/api/auth/admin/users", {
+    fetch(`${API_URL}/api/auth/admin/users`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())

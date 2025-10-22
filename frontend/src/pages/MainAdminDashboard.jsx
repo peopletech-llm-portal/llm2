@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function MainAdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -28,7 +29,7 @@ function MainAdminDashboard() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/users', {
+      const response = await fetch(`${API_URL}/api/admin/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -61,8 +62,8 @@ function MainAdminDashboard() {
     try {
       const token = localStorage.getItem('token');
       const url = editingUser 
-        ? `http://localhost:5000/api/admin/users/${editingUser._id}`
-        : 'http://localhost:5000/api/auth/register';
+        ? `${API_URL}/api/admin/users/${editingUser._id}`
+        : `${API_URL}/api/auth/register`;
       
       const method = editingUser ? 'PUT' : 'POST';
       
@@ -132,7 +133,7 @@ function MainAdminDashboard() {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+        const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -151,7 +152,7 @@ function MainAdminDashboard() {
   const downloadInternsJson = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/interns/download', {
+      const response = await fetch(`${API_URL}/api/auth/interns/download`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

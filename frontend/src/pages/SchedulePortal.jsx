@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+const API_URL = import.meta.env.VITE_API_URL;
 
 function SchedulePortal() {
   const [folders, setFolders] = useState([]);
@@ -28,7 +29,7 @@ function SchedulePortal() {
 
   const fetchFolders = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/schedule/folders");
+      const res = await fetch(`${API_URL}/api/schedule/folders`);
       const data = await res.json();
       setFolders(data);
     } catch (err) {
@@ -38,7 +39,7 @@ function SchedulePortal() {
 
   const fetchDocuments = async (folderId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/${folderId}`);
+      const res = await fetch(`${API_URL}/api/schedule/documents/${folderId}`);
       const data = await res.json();
       setDocuments(data);
     } catch (err) {
@@ -61,7 +62,7 @@ function SchedulePortal() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/schedule/folders", {
+      const res = await fetch(`${API_URL}/api/schedule/folders`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -111,7 +112,7 @@ function SchedulePortal() {
     formData.append("folderId", selectedFolder);
 
     try {
-      const res = await fetch("http://localhost:5000/api/schedule/documents/upload", {
+      const res = await fetch(`${API_URL}/api/schedule/documents/upload`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -149,7 +150,7 @@ function SchedulePortal() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/folders/${folderId}`, {
+      const res = await fetch(`${API_URL}/api/schedule/folders/${folderId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -184,7 +185,7 @@ function SchedulePortal() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/${documentId}`, {
+      const res = await fetch(`${API_URL}/api/schedule/documents/${documentId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -205,7 +206,7 @@ function SchedulePortal() {
 
   const handleDownloadDocument = async (documentId, fileName) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/download/${documentId}`);
+      const res = await fetch(`${API_URL}/api/schedule/documents/download/${documentId}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);

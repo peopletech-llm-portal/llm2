@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 const STUDENT_ID = "68a84d19ef8bb10e428ffcf0"; // replace with logged-in student id
+const API_URL = import.meta.env.VITE_API_URL;
 
 function ResultDashboard() {
   const [results, setResults] = useState([]);
@@ -8,7 +9,7 @@ function ResultDashboard() {
 
   useEffect(() => {
     setMessage("Loading results...");
-    fetch(`http://localhost:5000/api/results/${STUDENT_ID}`)
+    fetch(`${API_URL}/api/results/${STUDENT_ID}`)
       .then((res) => res.json())
       .then((data) => {
         setResults(data);

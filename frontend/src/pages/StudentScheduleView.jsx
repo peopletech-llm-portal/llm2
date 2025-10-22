@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+const API_URL = import.meta.env.VITE_API_URL;
 
 function StudentScheduleView() {
   const [folders, setFolders] = useState([]);
@@ -20,7 +21,7 @@ function StudentScheduleView() {
 
   const fetchFolders = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/schedule/folders");
+      const res = await fetch(`${API_URL}/api/schedule/folders`);
       const data = await res.json();
       setFolders(data);
     } catch (err) {
@@ -32,7 +33,7 @@ function StudentScheduleView() {
 
   const fetchDocuments = async (folderId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/${folderId}`);
+      const res = await fetch(`${API_URL}/api/schedule/documents/${folderId}`);
       const data = await res.json();
       setDocuments(data);
     } catch (err) {
@@ -42,7 +43,7 @@ function StudentScheduleView() {
 
   const handleDownloadDocument = async (documentId, fileName) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/download/${documentId}`);
+      const res = await fetch(`${API_URL}/api/schedule/documents/download/${documentId}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);

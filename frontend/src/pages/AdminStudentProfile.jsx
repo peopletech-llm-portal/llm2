@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+const API_URL = import.meta.env.VITE_API_URL;
 
 function ScoreCard({ result, onOpen }) {
   const title = result?.examId?.title || "Exam";
@@ -92,7 +93,7 @@ function AdminStudentProfile() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     // fetch student basic info
-    fetch("http://localhost:5000/api/auth/admin/users", { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API_URL}/api/auth/admin/users`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((list) => {
         const s = Array.isArray(list) ? list.find((u) => u._id === studentId) : null;
@@ -101,7 +102,7 @@ function AdminStudentProfile() {
       .catch(() => {});
 
     // fetch results
-    fetch(`http://localhost:5000/api/results/student/${studentId}`)
+    fetch(`${API_URL}/api/results/student/${studentId}`)
       .then((r) => r.json())
       .then((data) => setResults(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));
@@ -135,7 +136,7 @@ function AdminStudentProfile() {
 
   const openDetail = async (r) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/results/detail/${r._id}`);
+      const res = await fetch(`${API_URL}/api/results/detail/${r._id}`);
       const full = await res.json();
       setActiveResult(full);
       setOpen(true);

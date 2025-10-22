@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+const API_URL = import.meta.env.VITE_API_URL;
 
 function TrainingPortal() {
   const [folders, setFolders] = useState([]);
@@ -27,7 +28,7 @@ function TrainingPortal() {
 
   const fetchFolders = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/training/folders");
+      const res = await fetch(`${API_URL}/api/training/folders`);
       const data = await res.json();
       setFolders(data);
     } catch (err) {
@@ -37,7 +38,7 @@ function TrainingPortal() {
 
   const fetchVideos = async (folderId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/training/videos/${folderId}`);
+      const res = await fetch(`${API_URL}/api/training/videos/${folderId}`);
       const data = await res.json();
       setVideos(data);
     } catch (err) {
@@ -60,7 +61,7 @@ function TrainingPortal() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/training/folders", {
+      const res = await fetch(`${API_URL}/api/training/folders`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -106,7 +107,7 @@ function TrainingPortal() {
     formData.append("folderId", selectedFolder);
 
     try {
-      const res = await fetch("http://localhost:5000/api/training/videos/upload", {
+      const res = await fetch(`${API_URL}/api/training/videos/upload`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -144,7 +145,7 @@ function TrainingPortal() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/training/folders/${folderId}`, {
+      const res = await fetch(`${API_URL}/api/training/folders/${folderId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -179,7 +180,7 @@ function TrainingPortal() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/training/videos/${videoId}`, {
+      const res = await fetch(`${API_URL}/api/training/videos/${videoId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`

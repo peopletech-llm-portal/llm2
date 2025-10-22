@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { runCodeWithJudge0, judge0LanguageIdFor } from "../services/judge0";
 import { useNavigate, useParams } from "react-router-dom";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 // Read studentId from logged-in user (stored in localStorage by auth flow)
 const getLoggedInStudentId = () => {
   try {
@@ -42,7 +44,7 @@ function ExamPage() {
     console.log('Fetching exam with ID:', id);
     console.log('Token available:', !!token);
     
-    fetch(`http://localhost:5000/api/exams/${id}`, {
+    fetch(`${API_URL}/api/exams/${id}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -228,7 +230,7 @@ function ExamPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch("http://localhost:5000/api/results/submit", {
+      const res = await fetch(`${API_URL}/api/results/submit`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
