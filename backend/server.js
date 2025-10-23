@@ -19,7 +19,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Middleware
-app.use(cors());
+const allowedOrigins = [
+  'https://llm3-am2o.onrender.com',  // <-- change to your actual deployed frontend domain
+];
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 app.use("/api/exams", examRoutes);
 app.use("/api/results", resultRoutes);

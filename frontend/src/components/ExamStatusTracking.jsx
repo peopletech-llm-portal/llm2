@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function ExamStatusTracking() {
   const [exams, setExams] = useState([]);
@@ -16,7 +17,7 @@ function ExamStatusTracking() {
       const token = localStorage.getItem('token');
       
       // Fetch exams
-      const examsResponse = await fetch('http://localhost:5000/api/exams', {
+      const examsResponse = await fetch(`${API_URL}/api/exams`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -30,7 +31,7 @@ function ExamStatusTracking() {
       setExams(examsData);
 
       // Fetch interns
-      const internsResponse = await fetch('http://localhost:5000/api/admin/users', {
+      const internsResponse = await fetch(`${API_URL}/api/admin/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -44,7 +45,7 @@ function ExamStatusTracking() {
       setInterns(internsData.filter(user => user.role === 'INTERN'));
 
       // Fetch all results
-      const resultsResponse = await fetch('http://localhost:5000/api/results', {
+      const resultsResponse = await fetch(`${API_URL}/api/results`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
