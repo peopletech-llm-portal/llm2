@@ -126,3 +126,4 @@ const testDuplicatePrevention = async () => {
 
 // Run the test
 testDuplicatePrevention();
+
