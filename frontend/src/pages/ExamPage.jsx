@@ -489,7 +489,7 @@ function ExamPage() {
                   {/* Control Buttons */}
                   <div className="mt-auto space-y-3">
                     {/* Language Selection */}
-                    <div className="flex items-center mb-3">
+                    {/* <div className="flex items-center mb-3">
                       <label className="text-sm text-gray-400 mr-2">Language:</label>
                       <select 
                         className="bg-gray-800 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -501,7 +501,7 @@ function ExamPage() {
                         <option value="java">Java</option>
                         <option value="cpp">C++</option>
                       </select>
-                    </div>
+                    </div> */}
                     
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-3">
@@ -540,8 +540,9 @@ function ExamPage() {
                   </p>
                   
                   {/* Code Editor */}
-                  <div className="flex-grow mb-4 relative">
-                    <div className="absolute inset-0 flex">
+                  <div className="mb-4 relative max-h-[60vh] overflow-y-auto rounded-lg">
+                      <div className="flex">
+
                       {/* Line Numbers */}
                       <div className="bg-gray-900 text-gray-500 pt-4 pr-2 text-right font-mono text-sm select-none">
                         {Array.from({ length: (currentCode.match(/\n/g) || []).length + 1 }).map((_, i) => (
@@ -551,12 +552,15 @@ function ExamPage() {
                       
                       {/* Code Area */}
                       <textarea
-                        className="flex-grow border border-gray-600 bg-gray-800 text-white rounded-lg p-4 font-mono text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 min-h-[50vh] resize-none"
-                        value={currentCode}
-                        onChange={(e) => setAnswers((prev) => ({ ...(prev || {}), code: e.target.value }))}
-                        placeholder="Write your solution here..."
-                        spellCheck="false"
-                      />
+                          className="flex-grow border border-gray-600 bg-gray-800 text-white rounded-lg p-4 font-mono text-sm 
+                                    focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 
+                                    resize-none w-full h-[55vh] overflow-y-auto"
+                          value={currentCode}
+                          onChange={(e) => setAnswers((prev) => ({ ...(prev || {}), code: e.target.value }))}
+                          placeholder="Write your solution here..."
+                          spellCheck="false"
+                        />
+
                     </div>
                   </div>
                   
@@ -577,12 +581,12 @@ function ExamPage() {
                     
                     {/* Submit Button */}
                     <div className="mt-4 flex justify-end">
-                      <button
+                      {/* <button
                         onClick={handleSubmit}
                         className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
                       >
                         Submit Exam
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 </div>
