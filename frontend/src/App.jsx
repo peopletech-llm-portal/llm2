@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -17,10 +17,18 @@ import Navbar from "./components/Navbar";
 import PrivateRoute from "./components/PrivateRoute";
 import Home from "./pages/Home";
 
-function App() {
+
+// 👇 Wrap everything in a component that can access useLocation
+function AppContent() {
+  const location = useLocation();
+
+  // Hide Navbar on any route starting with /exam/
+  const hideNavbar = location.pathname.startsWith("/exam/");
+
   return (
-    <Router>
-      <Navbar />
+    <>
+      {!hideNavbar && <Navbar />}
+
       <div className="p-0">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -134,6 +142,14 @@ function App() {
           />
         </Routes>
       </div>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

@@ -36,6 +36,16 @@ function ExamPage() {
   const [currentTheoryIndex, setCurrentTheoryIndex] = useState(0);
   const navigate = useNavigate();
 
+  // 🚫 Prevent re-entry after auto-submit or violation
+  useEffect(() => {
+    const alreadyAttempted = localStorage.getItem(`exam_attempted_${id}`);
+    if (alreadyAttempted) {
+      alert("You have already attempted this exam. You cannot re-enter.");
+      navigate("/profile");
+    }
+  }, [id, navigate]);
+
+
   useEffect(() => {
     setMessage("");
     const token = localStorage.getItem('token');
@@ -138,16 +148,22 @@ function ExamPage() {
   const incrementViolation = (reason) => {
     setViolationCount((prev) => {
       const next = prev + 1;
+  
       if (next >= 2) {
+        // Mark exam permanently attempted
+        localStorage.setItem(`exam_attempted_${id}`, "true");
+  
         // Auto-submit on 2nd violation (after one allowed attempt)
         handleSubmit(true);
       } else {
         setViolationReason(reason || "Policy violation detected");
         setShowWarning(true);
       }
+  
       return next;
     });
   };
+  
 
   const enterFullscreen = async () => {
     setFullscreenError("");
@@ -354,6 +370,8 @@ function ExamPage() {
 
   return (
     <div className="min-h-screen bg-black text-white p-2 md:p-6 w-full">
+
+
       {showWarning && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
           <div className="bg-gray-900 p-6 rounded-xl shadow-2xl max-w-sm w-full text-center border border-red-500">
@@ -453,7 +471,8 @@ function ExamPage() {
         : exam.examType === "coding" ? (
           <>
           <div className="mb-8 w-full max-w-[1920px] mx-auto">
-            <div className="flex flex-col lg:flex-row w-full">
+          <div className="flex flex-col lg:flex-row w-full h-[calc(100vh-200px)] overflow-hidden">
+
               {/* Left section - 35% width on large screens */}
               <div className="w-full lg:w-[35%] lg:pr-4 mb-6 lg:mb-0">
                 <div className="bg-gray-900 p-4 md:p-6 rounded-xl border border-gray-700 h-full flex flex-col">
@@ -540,28 +559,33 @@ function ExamPage() {
                   </p>
                   
                   {/* Code Editor */}
-                  <div className="mb-4 relative max-h-[60vh] overflow-y-auto rounded-lg">
-                      <div className="flex">
+                      <div className="mb-4 relative border border-gray-700 rounded-lg bg-gray-900 flex overflow-hidden h-[55vh]">
+                        {/* Line Numbers */}
+                        <div
+                          id="lineNumbers"
+                          className="bg-gray-900 text-gray-500 py-4 px-3 text-right font-mono text-sm select-none border-r border-gray-700 overflow-hidden"
+                          style={{ lineHeight: "1.5", overflowY: "auto" }}
+                        >
+                          {Array.from({ length: (currentCode.match(/\n/g) || []).length + 1 }).map((_, i) => (
+                            <div key={i} className="leading-6">{i + 1}</div>
+                          ))}
+                        </div>
 
-                      {/* Line Numbers */}
-                      <div className="bg-gray-900 text-gray-500 pt-4 pr-2 text-right font-mono text-sm select-none">
-                        {Array.from({ length: (currentCode.match(/\n/g) || []).length + 1 }).map((_, i) => (
-                          <div key={i} className="h-6">{i + 1}</div>
-                        ))}
-                      </div>
-                      
-                      {/* Code Area */}
-                      <textarea
-                          className="flex-grow border border-gray-600 bg-gray-800 text-white rounded-lg p-4 font-mono text-sm 
-                                    focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 
-                                    resize-none w-full h-[55vh] overflow-y-auto"
+                        {/* Textarea */}
+                        <textarea
+                          className="flex-1 bg-gray-800 text-white font-mono text-sm p-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 overflow-y-auto"
+                          style={{ lineHeight: "1.5" }}
                           value={currentCode}
                           onChange={(e) => setAnswers((prev) => ({ ...(prev || {}), code: e.target.value }))}
+                          onScroll={(e) => {
+                            const ln = document.getElementById("lineNumbers");
+                            if (ln) ln.scrollTop = e.target.scrollTop;
+                          }}
                           placeholder="Write your solution here..."
                           spellCheck="false"
                         />
 
-                    </div>
+
                   </div>
                   
                   {/* Program Input */}
