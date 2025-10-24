@@ -31,6 +31,7 @@ const resultSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    completed: { type: Boolean, default: true }, 
     // For MCQ: store selected answers (array of option indices)
     mcqAnswers: [{ type: Number }],
     // For Coding: store submitted code and language plus pass counts

@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 function InternExamList() {
   const [exams, setExams] = useState([]);
   const [examResults, setExamResults] = useState([]);
+  const [completedIds, setCompletedIds] = useState(new Set()); // ✅ store completed exam IDs
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ function InternExamList() {
       fetchExams();
       if (user) {
         fetchExamResults();
+        fetchCompletedExams(); // ✅ fetch completed exams
       }
     }, 30000);
     
@@ -89,6 +92,22 @@ function InternExamList() {
       }
     } catch (error) {
       console.error('Error fetching exam results:', error);
+    }
+    const fetchCompletedExams = async (userData = user) => { // ✅ NEW FUNCTION
+      try {
+        const studentId = userData?._id || userData?.id;
+        if (!studentId) return;
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/api/results/completed/${studentId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCompletedIds(new Set(data.completedExamIds.map(id => String(id))));
+        }
+      } catch (error) {
+        console.error("Error fetching completed exams:", error);
+      }
     }
   };
 
@@ -168,12 +187,11 @@ function InternExamList() {
             const available = isExamAvailable(exam);
             
             // Don't show completed exams in available exams list
-            if (status.status === 'Completed') {
-              return null;
-            }
-            
+         
+                        
             return (
               <div key={exam._id} className="border border-gray-200 rounded-lg p-4">
+
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-gray-900">{exam.title}</h3>
@@ -221,14 +239,24 @@ function InternExamList() {
                       </div>
                     )}
                     
-                    {available && status.status !== 'Completed' && (
-                      <button
-                        onClick={() => handleStartExam(exam._id)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
-                      >
-                        Start Exam
-                      </button>
-                    )}
+                    {status.status === 'Completed' && (
+                          <button
+                            disabled
+                            className="bg-green-600 text-white px-4 py-2 rounded-md cursor-not-allowed text-sm"
+                          >
+                            ✅ Completed
+                          </button>
+                        )}
+
+                        {available && status.status !== 'Completed' && (
+                          <button
+                            onClick={() => handleStartExam(exam._id)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
+                          >
+                            Start Exam
+                          </button>
+                        )}
+
                     
                     {!available && (
                       <div className="text-sm text-gray-500">

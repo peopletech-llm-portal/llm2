@@ -12,8 +12,8 @@ const router = express.Router();
  */
 router.post("/submit", authMiddleware, async (req, res) => {
   try {
-    const { examId, studentId, answers } = req.body;
-
+    const { examId, answers } = req.body;
+    const studentId = req.user?.id || req.user?._id; // ✅ from token, not frontend
     if (!examId || !studentId || !answers) {
       return res
         .status(400)
@@ -51,13 +51,14 @@ router.post("/submit", authMiddleware, async (req, res) => {
         score: 0,
         totalQuestions: total,
         theoryAnswers,
+        completed: true, // ✅ mark completed
       });
       return res.json({ message: "✅ Theory exam submitted", score: 0, total, resultId: result._id });
     } else if (exam.examType === "coding") {
       // Evaluate in external sandbox (Piston API). Expect: { code, language }
       const code = typeof answers === "object" && answers && answers.code ? String(answers.code) : "";
       const language = typeof answers === "object" && answers && answers.language ? String(answers.language) : "javascript";
-      if (!code) return res.status(400).json({ message: "Code is required" });
+      if (!code && !req.body.auto) return res.status(400).json({ message: "Code is required" });
 
       // Use global fetch if available (Node >=18), else fall back to node-fetch (optional dep)
       const fetch = globalThis.fetch ? globalThis.fetch : (await import("node-fetch")).default;
@@ -99,6 +100,7 @@ router.post("/submit", authMiddleware, async (req, res) => {
         score: passed,
         totalQuestions: cases.length || 0,
         coding: { code, language, passed, total: cases.length || 0 },
+        completed: true, // ✅ mark completed
       });
       return res.json({ message: "✅ Code evaluated", score: passed, total: cases.length || 0, resultId: result._id });
     } else {
@@ -127,7 +129,9 @@ router.post("/submit", authMiddleware, async (req, res) => {
         score,
         totalQuestions: total,
         mcqAnswers: Array.isArray(normalized) ? normalized.map((n) => Number(n)) : [],
+        completed: true, // ✅ mark completed
       });
+      
       return res.json({ message: "✅ Exam submitted successfully", score, total, resultId: result._id });
     }
   } catch (error) {
@@ -207,6 +211,17 @@ router.get("/", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), async 
       .populate("studentId", "name email")
       .sort({ createdAt: -1 });
     res.json(results);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error ❌", error });
+  }
+});
+// ✅ Fetch all completed exam IDs for a student
+router.get("/completed/:studentId", authMiddleware, async (req, res) => {
+  try {
+    const results = await Result.find({ studentId: req.params.studentId, completed: true }).select("examId");
+    const completedExamIds = results.map((r) => r.examId);
+    res.json({ completedExamIds });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error ❌", error });

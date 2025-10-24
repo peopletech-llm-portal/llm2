@@ -38,7 +38,8 @@ function ExamPage() {
 
   // 🚫 Prevent re-entry after auto-submit or violation
   useEffect(() => {
-    const alreadyAttempted = localStorage.getItem(`exam_attempted_${id}`);
+    const sid = getLoggedInStudentId();
+    const alreadyAttempted = localStorage.getItem(`exam_attempted_${id}_${sid}`);
     if (alreadyAttempted) {
       alert("You have already attempted this exam. You cannot re-enter.");
       navigate("/profile");
@@ -147,22 +148,29 @@ function ExamPage() {
 
   const incrementViolation = (reason) => {
     setViolationCount((prev) => {
-      const next = prev + 1;
-  
-      if (next >= 2) {
-        // Mark exam permanently attempted
-        localStorage.setItem(`exam_attempted_${id}`, "true");
-  
-        // Auto-submit on 2nd violation (after one allowed attempt)
-        handleSubmit(true);
-      } else {
-        setViolationReason(reason || "Policy violation detected");
-        setShowWarning(true);
-      }
-  
-      return next;
+        const next = prev + 1;
+        if (next >= 2) {
+            // Mark exam permanently attempted
+            const sid = getLoggedInStudentId();
+            localStorage.setItem(`exam_attempted_${id}_${sid}`, "true");
+
+            // Force blank answers to ensure score zero if needed:
+            if (exam && exam.examType === "coding") {
+                setAnswers({
+                    code: "", // blank code for zero score
+                    language: exam.allowedLanguages?.[0] || "javascript"
+                });
+            }
+            // Auto-submit on 2nd violation, even if answers are blank
+            handleSubmit(true);
+        } else {
+            setViolationReason(reason || "Policy violation detected");
+            setShowWarning(true);
+        }
+        return next;
     });
-  };
+};
+
   
 
   const enterFullscreen = async () => {
@@ -210,15 +218,17 @@ function ExamPage() {
     setMessage("");
 
     // For coding exams, require non-empty code
+    // For coding exams, require non-empty code
     if (!auto && exam?.examType === "coding") {
       const code = (answers && answers.code) != null ? String(answers.code) : String((exam?.questions?.[0]?.starterCode) || "");
       if (!code.trim()) {
-        setMessage("Please write your solution before submitting.");
-        return;
+          setMessage("Please write your solution before submitting.");
+          return;
       }
       // Ensure the latest editor content is included in answers for submission
       setAnswers((prev) => ({ ...(prev || {}), code }));
     }
+
 
     // Build payload answers according to exam type
     let payloadAnswers = answers;
@@ -244,19 +254,18 @@ function ExamPage() {
 
     try {
       const token = localStorage.getItem('token');
+      // Include 'auto: true' only if this is an auto-submit
+      const payload = { examId: id, studentId, answers: payloadAnswers, ...(auto ? { auto: true } : {}) };
+    
       const res = await fetch("http://localhost:5000/api/results/submit", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          examId: id,
-          studentId,
-          answers: payloadAnswers,
-        }),
+        body: JSON.stringify(payload),
       });
-
+    
       const data = await res.json();
       if (res.ok) {
         // Exit fullscreen after submit
@@ -266,7 +275,8 @@ function ExamPage() {
       } else {
         setMessage(data.message || "Submission failed ❌");
       }
-    } catch (err) {
+    }
+    catch (err) {
       setMessage("Server error ❌");
     }
   };
