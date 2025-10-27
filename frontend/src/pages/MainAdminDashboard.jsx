@@ -50,11 +50,23 @@ function MainAdminDashboard() {
   };
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    
+    // If role is changed to OUTER, clear username field
+    if (name === 'role' && value === 'OUTER') {
+      setFormData({
+        ...formData,
+        [name]: value,
+        username: ''  // Clear username when switching to OUTER
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,7 +83,14 @@ function MainAdminDashboard() {
       
       // Prepare data for submission
       let submitData = { ...formData };
-      
+      if (submitData.role === "OUTER" && (!submitData.username || submitData.username.trim() === "")) {
+        delete submitData.username;
+      }
+
+      // Remove other sparse fields if empty, for all roles:
+      ['username', 'companyEmail', 'employeeId'].forEach(field => {
+        if (submitData[field] === "") delete submitData[field];
+      });
       // For Outer users, format DOB and generate password
       if (formData.role === 'OUTER' && formData.dateOfBirth) {
         // Convert date from YYYY-MM-DD to dd-mm-yyyy format
@@ -214,12 +233,30 @@ function MainAdminDashboard() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
             <div className="space-x-3">
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-              >
-                Create User
-              </button>
+            <button
+              onClick={() => {
+                setShowCreateForm(true);
+                setEditingUser(null);
+                setFormData({
+                  name: '',
+                  email: '',
+                  password: '',
+                  role: 'INTERN',
+                  employeeId: '',
+                  companyEmail: '',
+                  personalEmail: '',
+                  contactNumber: '',
+                  username: '',  // Explicitly reset to empty
+                  gender: '',
+                  phoneNumber: '',
+                  dateOfBirth: ''
+                });
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+            >
+              Create User
+            </button>
+
               <button
                 onClick={downloadInternsJson}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
