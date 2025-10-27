@@ -1,5 +1,8 @@
+// frontend/src/pages/SubAdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
+import axios from 'axios';
 import ExamManagement from '../components/ExamManagement';
 import ExamStatusTracking from '../components/ExamStatusTracking';
 
@@ -21,26 +24,25 @@ function SubAdminDashboard() {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('users');
+  const [exams, setExams] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [selectedExam, setSelectedExam] = useState(null);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [studentAnswer, setStudentAnswer] = useState('');
+  const [evaluation, setEvaluation] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
+    fetchExams();
   }, []);
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const res = await axios.get('http://localhost:5000/api/admin/users', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      }
+      setUsers(res.data);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -48,73 +50,46 @@ function SubAdminDashboard() {
     }
   };
 
+  const fetchExams = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/admin/exams', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setExams(res.data.exams);
+    } catch (error) {
+      console.error('Failed to fetch exams:', error);
+    }
+  };
+
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Clear previous errors
     setErrors({});
-    
     try {
-      const token = localStorage.getItem('token');
-      const url = editingUser 
-        ? `http://localhost:5000/api/admin/users/${editingUser._id}`
-        : 'http://localhost:5000/api/auth/register';
-      
-      const method = editingUser ? 'PUT' : 'POST';
-      
-      const requestData = {
-        ...formData,
-        role: 'INTERN' // Sub admins can only create interns
-      };
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
+      const url = editingUser ? `http://localhost:5000/api/admin/users/${editingUser._id}` : 'http://localhost:5000/api/auth/register';
+      const method = editingUser ? 'put' : 'post';
+      const res = await axios[method](url, { ...formData, role: 'INTERN' }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-
-      if (response.ok) {
+      if (res.status === 200 || res.status === 201) {
         setShowCreateForm(false);
         setEditingUser(null);
-        setFormData({
-          name: '',
-          email: '',
-          password: '',
-          employeeId: '',
-          companyEmail: '',
-          personalEmail: '',
-          contactNumber: '',
-          username: ''
-        });
+        setFormData({ name: '', email: '', password: '', employeeId: '', companyEmail: '', personalEmail: '', contactNumber: '', username: '' });
         fetchUsers();
-      } else {
-        const errorData = await response.json();
-        if (errorData.message) {
-          // Handle specific validation errors
-          if (errorData.message === "Email already registered") {
-            setErrors(prev => ({ ...prev, email: errorData.message }));
-          } else if (errorData.message === "Username already taken") {
-            setErrors(prev => ({ ...prev, username: errorData.message }));
-          } else if (errorData.message === "Mobile number already registered") {
-            setErrors(prev => ({ ...prev, contactNumber: errorData.message }));
-          } else if (errorData.message === "Employee ID already exists") {
-            setErrors(prev => ({ ...prev, employeeId: errorData.message }));
-          } else if (errorData.message === "Company email already registered") {
-            setErrors(prev => ({ ...prev, companyEmail: errorData.message }));
-          }
-        }
       }
     } catch (error) {
-      console.error('Error saving user:', error);
+      const errorData = error.response?.data;
+      if (errorData?.message) {
+        const field = errorData.message.toLowerCase().includes('email') ? 'email' : 
+          errorData.message.toLowerCase().includes('username') ? 'username' : 
+          errorData.message.toLowerCase().includes('mobile') ? 'contactNumber' : 
+          errorData.message.toLowerCase().includes('employee id') ? 'employeeId' : 
+          errorData.message.toLowerCase().includes('company email') ? 'companyEmail' : null;
+        if (field) setErrors({ [field]: errorData.message });
+      }
     }
   };
 
@@ -136,17 +111,10 @@ function SubAdminDashboard() {
   const handleDelete = async (userId) => {
     if (window.confirm('Are you sure you want to delete this intern?')) {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-
-        if (response.ok) {
-          fetchUsers();
-        }
+        fetchUsers();
       } catch (error) {
         console.error('Error deleting user:', error);
       }
@@ -155,26 +123,57 @@ function SubAdminDashboard() {
 
   const downloadInternsJson = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/interns/download', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const res = await axios.get('http://localhost:5000/api/auth/interns/download', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        responseType: 'blob'
       });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'interns.json';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'interns.json';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading file:', error);
+    }
+  };
+
+  const onDrop = async (acceptedFiles) => {
+    setAiLoading(true);
+    const formData = new FormData();
+    formData.append('doc', acceptedFiles[0]);
+    try {
+      const res = await axios.post('http://localhost:5000/api/admin/upload-mcqs', formData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setExams([...exams, res.data.exam]);
+      alert('MCQs extracted and saved!');
+    } catch (error) {
+      alert('Extraction failed: ' + (error.response?.data?.error || error.message));
+    }
+    setAiLoading(false);
+  };
+
+  const { getRootProps, getInputProps } = useDropzone({ onDrop, accept: { 'application/pdf': ['.pdf'] } });
+
+  const handleEvaluate = async () => {
+    if (!selectedExam || !selectedQuestion || !studentAnswer) {
+      alert('Select an exam, question, and provide an answer');
+      return;
+    }
+    try {
+      const res = await axios.post('http://localhost:5000/api/admin/evaluate-theoretical', {
+        examId: selectedExam._id,
+        questionId: selectedQuestion._id,
+        studentAnswer
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setEvaluation(res.data.evaluation);
+    } catch (error) {
+      alert('Evaluation failed: ' + (error.response?.data?.error || error.message));
     }
   };
 
@@ -196,9 +195,7 @@ function SubAdminDashboard() {
             <button
               onClick={() => setActiveTab('users')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'users'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === 'users' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               Intern Management
@@ -206,9 +203,7 @@ function SubAdminDashboard() {
             <button
               onClick={() => setActiveTab('exams')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'exams'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === 'exams' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               Exam Management
@@ -216,9 +211,7 @@ function SubAdminDashboard() {
             <button
               onClick={() => setActiveTab('status')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'status'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === 'status' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               Exam Status
@@ -228,63 +221,63 @@ function SubAdminDashboard() {
 
         {/* Tab Content */}
         {activeTab === 'users' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Intern Management</h2>
-            <div className="space-x-3">
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-              >
-                Create Intern
-              </button>
-              <button
-                onClick={downloadInternsJson}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
-              >
-                Download Interns JSON
-              </button>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Intern Management</h2>
+              <div className="space-x-3">
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+                >
+                  Create Intern
+                </button>
+                <button
+                  onClick={downloadInternsJson}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
+                >
+                  Download Interns JSON
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.map((user) => (
+                    <tr key={user._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.employeeId || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.contactNumber || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user._id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.employeeId || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.contactNumber || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
         )}
 
         {/* Create/Edit Intern Modal */}
@@ -439,7 +432,74 @@ function SubAdminDashboard() {
 
         {/* Exam Management Tab */}
         {activeTab === 'exams' && (
-          <ExamManagement />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Exam Management</h2>
+            <ExamManagement />
+            <h3 className="text-lg font-medium text-gray-700 mt-6">AI Exam Tools</h3>
+            <div className="space-y-4 mt-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-md p-4" {...getRootProps()}>
+                <input {...getInputProps()} />
+                <p className="text-gray-600">Drag & drop a PDF to extract MCQs</p>
+                {aiLoading && <p className="text-blue-600">Processing with Gemini...</p>}
+              </div>
+              <h4 className="text-md font-medium text-gray-700">Saved Exams</h4>
+              <select
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => {
+                  const exam = exams.find(ex => ex._id === e.target.value);
+                  setSelectedExam(exam);
+                  setSelectedQuestion(null);
+                  setEvaluation(null);
+                }}
+              >
+                <option value="">Select an exam</option>
+                {exams.map(exam => (
+                  <option key={exam._id} value={exam._id}>{exam.title} ({exam.examType})</option>
+                ))}
+              </select>
+              {selectedExam && (
+                <div>
+                  <h5 className="text-md font-medium text-gray-700 mt-4">Questions</h5>
+                  <select
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => {
+                      const question = selectedExam.questions.find(q => q._id === e.target.value);
+                      setSelectedQuestion(question);
+                      setEvaluation(null);
+                    }}
+                  >
+                    <option value="">Select a question</option>
+                    {selectedExam.questions.map(q => (
+                      <option key={q._id} value={q._id}>{q.question}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {selectedQuestion && selectedExam.examType === 'theory' && (
+                <div className="mt-4">
+                  <textarea
+                    value={studentAnswer}
+                    onChange={e => setStudentAnswer(e.target.value)}
+                    placeholder="Enter student's answer"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{ height: '100px' }}
+                  />
+                  <button
+                    onClick={handleEvaluate}
+                    className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+                  >
+                    Evaluate with Gemini
+                  </button>
+                  {evaluation && (
+                    <div className="mt-4 p-4 bg-gray-100 rounded-md">
+                      <p className="text-gray-900">Score: {evaluation.score}/10</p>
+                      <p className="text-gray-900">Feedback: {evaluation.feedback}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Exam Status Tracking Tab */}

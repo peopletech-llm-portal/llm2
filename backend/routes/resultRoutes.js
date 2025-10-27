@@ -53,6 +53,12 @@ router.post("/submit", authMiddleware, async (req, res) => {
         theoryAnswers,
         completed: true, // ✅ mark completed
       });
+      
+      // Hide scores for Outer users
+      if (req.user.role === 'OUTER') {
+        return res.json({ message: "✅ Theory exam submitted", score: null, total: null, resultId: result._id });
+      }
+      
       return res.json({ message: "✅ Theory exam submitted", score: 0, total, resultId: result._id });
     } else if (exam.examType === "coding") {
       // Evaluate in external sandbox (Piston API). Expect: { code, language }
@@ -102,6 +108,12 @@ router.post("/submit", authMiddleware, async (req, res) => {
         coding: { code, language, passed, total: cases.length || 0 },
         completed: true, // ✅ mark completed
       });
+      
+      // Hide scores for Outer users
+      if (req.user.role === 'OUTER') {
+        return res.json({ message: "✅ Code evaluated", score: null, total: null, resultId: result._id });
+      }
+      
       return res.json({ message: "✅ Code evaluated", score: passed, total: cases.length || 0, resultId: result._id });
     } else {
       // Normalize answers to array of indices
@@ -132,6 +144,11 @@ router.post("/submit", authMiddleware, async (req, res) => {
         completed: true, // ✅ mark completed
       });
       
+      // Hide scores for Outer users
+      if (req.user.role === 'OUTER') {
+        return res.json({ message: "✅ Exam submitted successfully", score: null, total: null, resultId: result._id });
+      }
+      
       return res.json({ message: "✅ Exam submitted successfully", score, total, resultId: result._id });
     }
   } catch (error) {
@@ -157,6 +174,16 @@ router.get("/:studentId", authMiddleware, async (req, res) => {
     // Filter out results where the exam has been deleted (examId is null after populate)
     const validResults = results.filter(result => result.examId !== null);
     
+    // Hide scores for Outer users
+    if (req.user.role === 'OUTER') {
+      const hiddenResults = validResults.map(result => ({
+        ...result.toObject(),
+        score: null, // Hide the score
+        totalQuestions: null // Hide total questions
+      }));
+      return res.json(hiddenResults);
+    }
+    
     res.json(validResults);
   } catch (error) {
     console.error(error);
@@ -176,6 +203,16 @@ router.get("/student/:studentId", authMiddleware, async (req, res) => {
     
     // Filter out results where the exam has been deleted (examId is null after populate)
     const validResults = results.filter(result => result.examId !== null);
+    
+    // Hide scores for Outer users
+    if (req.user.role === 'OUTER') {
+      const hiddenResults = validResults.map(result => ({
+        ...result.toObject(),
+        score: null, // Hide the score
+        totalQuestions: null // Hide total questions
+      }));
+      return res.json(hiddenResults);
+    }
     
     res.json(validResults);
   } catch (error) {

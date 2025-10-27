@@ -73,6 +73,12 @@ function Navbar() {
                   Schedules
                 </Link>
               </>
+            ) : user.role === "OUTER" ? (
+              <>
+                <Link to="/profile" className="hover:underline">
+                  Profile
+                </Link>
+              </>
             ) : (
               <>
                 <Link to="/profile" className="hover:underline">

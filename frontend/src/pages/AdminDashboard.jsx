@@ -16,6 +16,7 @@ function AdminDashboard() {
   const [duration, setDuration] = useState(""); // minutes
   const [editExamId, setEditExamId] = useState(null); // explicit edit mode
   const [theoryEditExam, setTheoryEditExam] = useState(null); // pass to TheoryBuilder
+  const [targetRole, setTargetRole] = useState("INTERN"); // target role for exam
 
   // Fetch exams
   const fetchExams = async () => {
@@ -67,7 +68,7 @@ function AdminDashboard() {
       return;
     }
     // Optional: validate times if provided
-    let payload = { title, questions: questionsDraft };
+    let payload = { title, questions: questionsDraft, targetRole };
     if (startTime) payload.startTime = new Date(startTime).toISOString();
     if (endTime) payload.endTime = new Date(endTime).toISOString();
     if (duration) payload.duration = Number(duration);
@@ -157,6 +158,18 @@ function AdminDashboard() {
                 onChange={(e) => setTitle(e.target.value)}
                 className="border p-2 w-full rounded"
               />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Target Role</label>
+              <select
+                value={targetRole}
+                onChange={(e) => setTargetRole(e.target.value)}
+                className="border p-2 w-full rounded"
+              >
+                <option value="INTERN">Intern</option>
+                <option value="OUTER">Outer</option>
+              </select>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -435,6 +448,7 @@ function TheoryBuilder({ fetchExams }) {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [editId, setEditId] = useState(null);
+  const [targetRole, setTargetRole] = useState("INTERN");
 
   const addQuestion = () => {
     setError("");
@@ -459,6 +473,7 @@ function TheoryBuilder({ fetchExams }) {
       duration: duration ? Number(duration) : undefined,
       startTime: startTime ? new Date(startTime).toISOString() : undefined,
       endTime: endTime ? new Date(endTime).toISOString() : undefined,
+      targetRole,
       // Store theory questions in the common 'questions' array using 'question' field
       // Use a non-empty placeholder option to satisfy schema requirements
       questions: questions.map((q) => ({ question: q.prompt, options: ["(long answer)"] , correctAnswer: 0 })),
@@ -496,6 +511,17 @@ function TheoryBuilder({ fetchExams }) {
       <div>
         <label className="block text-sm font-medium mb-1">Exam Title</label>
         <input className="border p-2 rounded w-full" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Target Role</label>
+        <select
+          value={targetRole}
+          onChange={(e) => setTargetRole(e.target.value)}
+          className="border p-2 rounded w-full"
+        >
+          <option value="INTERN">Intern</option>
+          <option value="OUTER">Outer</option>
+        </select>
       </div>
       <div className="grid md:grid-cols-3 gap-3">
         <div>
@@ -569,6 +595,7 @@ function CodingBuilder({ fetchExams }) {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [editId, setEditId] = useState(null);
+  const [targetRole, setTargetRole] = useState("INTERN");
 
   const addCase = () => setTestcases((t) => [...t, { input: "", expected: "" }]);
   const removeCase = (idx) => setTestcases((t) => t.filter((_, i) => i !== idx));
@@ -585,6 +612,7 @@ function CodingBuilder({ fetchExams }) {
       duration: duration ? Number(duration) : undefined,
       startTime: startTime ? new Date(startTime).toISOString() : undefined,
       endTime: endTime ? new Date(endTime).toISOString() : undefined,
+      targetRole,
       questions: [
         {
           question: problem,
@@ -627,6 +655,17 @@ function CodingBuilder({ fetchExams }) {
       <div>
         <label className="block text-sm font-medium mb-1">Exam Title</label>
         <input className="border p-2 rounded w-full" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Target Role</label>
+        <select
+          value={targetRole}
+          onChange={(e) => setTargetRole(e.target.value)}
+          className="border p-2 rounded w-full"
+        >
+          <option value="INTERN">Intern</option>
+          <option value="OUTER">Outer</option>
+        </select>
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Allowed Languages</label>

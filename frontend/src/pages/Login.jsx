@@ -34,6 +34,8 @@ function Login() {
           navigate("/subadmin/dashboard");
         } else if (data.user.role === "INTERN") {
           navigate("/intern/dashboard");
+        } else if (data.user.role === "OUTER") {
+          navigate("/profile");
         } else {
           navigate("/profile");
         }
@@ -62,11 +64,13 @@ function Login() {
             >
               <option value="admin">Admin Login</option>
               <option value="intern">Intern Login</option>
+              <option value="outer">Outer Login</option>
             </select>
           </div>
           <div>
             <label className="block text-sm text-zinc-700 mb-1">
-              {form.loginType === 'intern' ? 'Company Email or Contact Number' : 'Email'}
+              {form.loginType === 'intern' ? 'Company Email or Contact Number' : 
+               form.loginType === 'outer' ? 'Email' : 'Email'}
             </label>
             <input
               type={form.loginType === 'intern' ? 'text' : 'email'}
@@ -78,12 +82,14 @@ function Login() {
             />
           </div>
           <div>
-            <label className="block text-sm text-zinc-700 mb-1">Password</label>
+            <label className="block text-sm text-zinc-700 mb-1">
+              {form.loginType === 'outer' ? 'Date of Birth (ddmmyyyy)' : 'Password'}
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="••••••••"
+                placeholder={form.loginType === 'outer' ? 'ddmmyyyy' : '••••••••'}
                 onChange={handleChange}
                 className="w-full bg-white border border-zinc-300 text-zinc-900 placeholder-zinc-400 p-3 pr-10 rounded focus:outline-none focus:ring-2 focus:ring-zinc-400/60"
                 required

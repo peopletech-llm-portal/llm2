@@ -38,7 +38,10 @@ router.post("/register", authMiddleware, canCreateRole, async (req, res) => {
       companyEmail, 
       personalEmail, 
       contactNumber, 
-      username 
+      username,
+      gender,
+      phoneNumber,
+      dateOfBirth
     } = req.body;
 
     // Validate required fields based on role
@@ -46,6 +49,14 @@ router.post("/register", authMiddleware, canCreateRole, async (req, res) => {
       if (!employeeId || !companyEmail || !contactNumber || !username) {
         return res.status(400).json({ 
           message: "Employee ID, company email, contact number, and username are required for interns" 
+        });
+      }
+    }
+
+    if (role === 'OUTER') {
+      if (!gender || !phoneNumber || !dateOfBirth) {
+        return res.status(400).json({ 
+          message: "Gender, phone number, and date of birth are required for outer users" 
         });
       }
     }
@@ -64,6 +75,12 @@ router.post("/register", authMiddleware, canCreateRole, async (req, res) => {
     if (contactNumber) {
       const existingUserByMobile = await User.findOne({ contactNumber });
       if (existingUserByMobile) return res.status(400).json({ message: "Mobile number already registered" });
+    }
+
+    // Check for duplicate phone number for outer users
+    if (phoneNumber) {
+      const existingUserByPhone = await User.findOne({ phoneNumber });
+      if (existingUserByPhone) return res.status(400).json({ message: "Phone number already registered" });
     }
 
     // Check existing employee ID for interns
@@ -97,6 +114,13 @@ router.post("/register", authMiddleware, canCreateRole, async (req, res) => {
       userData.personalEmail = personalEmail;
       userData.contactNumber = contactNumber;
       userData.username = username;
+    }
+
+    // Add outer-specific fields
+    if (role === 'OUTER') {
+      userData.gender = gender;
+      userData.phoneNumber = phoneNumber;
+      userData.dateOfBirth = dateOfBirth;
     }
 
     const user = new User(userData);
@@ -139,6 +163,12 @@ router.post("/login", async (req, res) => {
           { contactNumber: email }
         ],
         role: 'INTERN'
+      });
+    } else if (loginType === 'outer') {
+      // For outer users, use email and numeric DOB (ddmmyyyy) as password
+      user = await User.findOne({ 
+        email,
+        role: 'OUTER'
       });
     } else {
       // For admins, use regular email
@@ -201,6 +231,11 @@ router.get("/users", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), a
     // Sub admins can only see interns
     if (currentUser.role === 'SUB_ADMIN') {
       query.role = 'INTERN';
+    }
+    
+    // Main admins can see all users except other main admins
+    if (currentUser.role === 'MAIN_ADMIN') {
+      query.role = { $in: ['SUB_ADMIN', 'INTERN', 'OUTER'] };
     }
     
     const users = await User.find(query).select("-password").populate('createdBy', 'name email');

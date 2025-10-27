@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: {
     type: String,
-    enum: ["MAIN_ADMIN", "SUB_ADMIN", "INTERN"],
+    enum: ["MAIN_ADMIN", "SUB_ADMIN", "INTERN", "OUTER"],
     required: true,
   },
   // Additional fields for interns
@@ -15,6 +15,10 @@ const userSchema = new mongoose.Schema({
   personalEmail: { type: String },
   contactNumber: { type: String },
   username: { type: String, unique: true, sparse: true },
+  // Additional fields for outer users
+  gender: { type: String },
+  phoneNumber: { type: String },
+  dateOfBirth: { type: String },
   // Track who created this user
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   // Timestamps
