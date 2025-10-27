@@ -22,7 +22,7 @@ function StudentTrainingView() {
   const fetchFolders = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5000/api/training/folders");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/results/${studentId}`);
       const data = await res.json();
       setFolders(data);
     } catch (err) {
@@ -35,7 +35,7 @@ function StudentTrainingView() {
   const fetchVideos = async (folderId) => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/training/videos/${folderId}`);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/results/${studentId}`);
       const data = await res.json();
       setVideos(data);
     } catch (err) {

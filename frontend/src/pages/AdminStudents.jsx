@@ -6,14 +6,20 @@ function AdminStudents() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ✅ Use environment variable for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch("http://localhost:5000/api/auth/admin/users", {
+
+    fetch(`${API_BASE_URL}/api/auth/admin/users`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then((data) => {
-        const list = Array.isArray(data) ? data.filter((u) => u.role === "student") : [];
+        const list = Array.isArray(data)
+          ? data.filter((u) => u.role === "student")
+          : [];
         setStudents(list);
         setLoading(false);
       })
@@ -21,7 +27,7 @@ function AdminStudents() {
         setError("Failed to load students");
         setLoading(false);
       });
-  }, []);
+  }, [API_BASE_URL]);
 
   if (loading) return <div className="p-6">Loading students...</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
@@ -30,8 +36,8 @@ function AdminStudents() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Students</h2>
-        <Link 
-          className="px-4 py-2 bg-black text-white font-medium rounded hover:bg-zinc-800 transition" 
+        <Link
+          className="px-4 py-2 bg-black text-white font-medium rounded hover:bg-zinc-800 transition"
           to="/admin"
         >
           Back to Admin
@@ -44,13 +50,16 @@ function AdminStudents() {
       ) : (
         <div className="space-y-4">
           {students.map((s) => (
-            <div key={s._id} className="p-4 border border-zinc-300 rounded-lg bg-white shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+            <div
+              key={s._id}
+              className="p-4 border border-zinc-300 rounded-lg bg-white shadow-sm flex items-center justify-between hover:shadow-md transition-shadow"
+            >
               <div>
                 <p className="font-semibold text-zinc-900">{s.name}</p>
                 <p className="text-sm text-zinc-600">{s.email}</p>
               </div>
-              <Link 
-                className="px-4 py-2 bg-black text-white font-medium rounded hover:bg-zinc-800 transition" 
+              <Link
+                className="px-4 py-2 bg-black text-white font-medium rounded hover:bg-zinc-800 transition"
                 to={`/admin/students/${s._id}`}
               >
                 View Profile
@@ -64,5 +73,3 @@ function AdminStudents() {
 }
 
 export default AdminStudents;
-
-

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function TrainingPortal() {
   const [folders, setFolders] = useState([]);
@@ -13,9 +14,15 @@ function TrainingPortal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
   // Fetch folders and videos
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
     fetchFolders();
   }, []);
 
@@ -27,21 +34,41 @@ function TrainingPortal() {
 
   const fetchFolders = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/training/folders");
-      const data = await res.json();
-      setFolders(data);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/training/folders`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFolders(data);
+      } else {
+        setError("Failed to fetch training folders: " + res.statusText);
+      }
     } catch (err) {
-      setError("Failed to fetch training folders");
+      setError("Server error while fetching training folders");
     }
   };
 
   const fetchVideos = async (folderId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/training/videos/${folderId}`);
-      const data = await res.json();
-      setVideos(data);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/training/videos/${folderId}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVideos(data);
+      } else {
+        setError("Failed to fetch training videos: " + res.statusText);
+      }
     } catch (err) {
-      setError("Failed to fetch training videos");
+      setError("Server error while fetching training videos");
     }
   };
 
@@ -54,15 +81,15 @@ function TrainingPortal() {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Please log in to create folders");
+      navigate("/login");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/training/folders", {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/training/folders`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
@@ -94,7 +121,7 @@ function TrainingPortal() {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Please log in to upload videos");
+      navigate("/login");
       return;
     }
 
@@ -106,7 +133,7 @@ function TrainingPortal() {
     formData.append("folderId", selectedFolder);
 
     try {
-      const res = await fetch("http://localhost:5000/api/training/videos/upload", {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/training/videos/upload`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -133,21 +160,22 @@ function TrainingPortal() {
   };
 
   const handleDeleteFolder = async (folderId) => {
-    if (!confirm("Are you sure you want to delete this folder and all its videos? This action cannot be undone.")) {
+    if (!window.confirm("Are you sure you want to delete this folder and all its videos? This action cannot be undone.")) {
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Please log in to delete folders");
+      navigate("/login");
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/training/folders/${folderId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/training/folders/${folderId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
       });
 
@@ -168,21 +196,22 @@ function TrainingPortal() {
   };
 
   const handleDeleteVideo = async (videoId) => {
-    if (!confirm("Are you sure you want to delete this video? This action cannot be undone.")) {
+    if (!window.confirm("Are you sure you want to delete this video? This action cannot be undone.")) {
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Please log in to delete videos");
+      navigate("/login");
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/training/videos/${videoId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/training/videos/${videoId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
       });
 
@@ -337,7 +366,7 @@ function TrainingPortal() {
                             className="w-full h-full rounded-lg"
                             preload="metadata"
                           >
-                            <source src={video.filePath} type="video/mp4" />
+                            <source src={`${import.meta.env.VITE_API_BASE_URL}${video.filePath}`} type="video/mp4" />
                             Your browser does not support the video tag.
                           </video>
                         </div>

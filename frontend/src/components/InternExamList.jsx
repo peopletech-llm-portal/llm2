@@ -1,59 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// ✅ Use API base URL from environment
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+
 function InternExamList() {
   const [exams, setExams] = useState([]);
   const [examResults, setExamResults] = useState([]);
-  const [completedIds, setCompletedIds] = useState(new Set()); // ✅ store completed exam IDs
-
+  const [completedIds, setCompletedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get user from localStorage like Profile component does
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser) {
       console.log("Using saved user from localStorage:", savedUser);
       setUser(savedUser);
-      // Fetch exam results immediately if user is available
       fetchExamResults(savedUser);
     }
-    
-    // Initial fetch
+
     fetchExams();
-    
-    // Set up periodic refresh every 30 seconds to check for deleted exams
+
     const refreshInterval = setInterval(() => {
       fetchExams();
       if (user) {
         fetchExamResults();
-        fetchCompletedExams(); // ✅ fetch completed exams
+        fetchCompletedExams();
       }
     }, 30000);
-    
-    // Clean up interval on component unmount
+
     return () => clearInterval(refreshInterval);
   }, []);
 
-  // Fetch exam results when user is loaded
   useEffect(() => {
     if (user) {
       fetchExamResults();
     }
   }, [user]);
 
-
+  // ✅ Fetch Exams
   const fetchExams = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/exams', {
+      const response = await fetch(`${API_BASE_URL}/exams`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log("Exams fetched:", data);
@@ -66,6 +62,7 @@ function InternExamList() {
     }
   };
 
+  // ✅ Fetch Exam Results
   const fetchExamResults = async (userData = user) => {
     try {
       const studentId = userData?._id || userData?.id;
@@ -73,16 +70,16 @@ function InternExamList() {
         console.log("No student ID found in user object:", userData);
         return;
       }
-      
+
       console.log("Fetching exam results for studentId:", studentId);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/results/${studentId}`, {
+      const response = await fetch(`${API_BASE_URL}/results/${studentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log("Exam results fetched:", data);
@@ -93,38 +90,32 @@ function InternExamList() {
     } catch (error) {
       console.error('Error fetching exam results:', error);
     }
-    const fetchCompletedExams = async (userData = user) => { // ✅ NEW FUNCTION
-      try {
-        const studentId = userData?._id || userData?.id;
-        if (!studentId) return;
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/results/completed/${studentId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCompletedIds(new Set(data.completedExamIds.map(id => String(id))));
-        }
-      } catch (error) {
-        console.error("Error fetching completed exams:", error);
+  };
+
+  // ✅ Fetch Completed Exams
+  const fetchCompletedExams = async (userData = user) => {
+    try {
+      const studentId = userData?._id || userData?.id;
+      if (!studentId) return;
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/results/completed/${studentId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCompletedIds(new Set(data.completedExamIds.map(id => String(id))));
       }
+    } catch (error) {
+      console.error("Error fetching completed exams:", error);
     }
   };
 
   const getExamStatus = (examId) => {
-    console.log("Getting exam status for examId:", examId, "type:", typeof examId);
-    console.log("Available exam results:", examResults);
-    
     const result = examResults.find(r => {
       const resultExamId = r.examId?._id || r.examId;
-      console.log("Comparing resultExamId:", resultExamId, "type:", typeof resultExamId, "with examId:", examId);
-      console.log("Strict equality:", resultExamId === examId);
-      console.log("String equality:", String(resultExamId) === String(examId));
-      return resultExamId === examId;
+      return String(resultExamId) === String(examId);
     });
-    
-    console.log("Found result:", result);
-    
+
     if (result) {
       return {
         status: 'Completed',
@@ -140,7 +131,6 @@ function InternExamList() {
     const now = new Date();
     const startTime = exam.startTime ? new Date(exam.startTime) : null;
     const endTime = exam.endTime ? new Date(exam.endTime) : null;
-    
     if (startTime && now < startTime) return false;
     if (endTime && now > endTime) return false;
     return true;
@@ -174,7 +164,7 @@ function InternExamList() {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h2 className="text-xl font-semibold text-gray-900 mb-6">Available Exams</h2>
-      
+
       {exams.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           No exams available at the moment
@@ -182,16 +172,11 @@ function InternExamList() {
       ) : (
         <div className="space-y-4">
           {exams.map(exam => {
-            console.log("Rendering exam:", exam.title, "with ID:", exam._id);
             const status = getExamStatus(exam._id);
             const available = isExamAvailable(exam);
-            
-            // Don't show completed exams in available exams list
-         
-                        
+
             return (
               <div key={exam._id} className="border border-gray-200 rounded-lg p-4">
-
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-gray-900">{exam.title}</h3>
@@ -219,48 +204,47 @@ function InternExamList() {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="ml-4 text-right">
                     <div className="mb-2">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getExamStatusColor(status.status)}`}>
                         {status.status}
                       </span>
                     </div>
-                    
-                    {status.status === 'Completed' && (
-                      <div className="text-sm text-gray-600 mb-2">
-                        Score: {status.score}/{status.total}
-                      </div>
-                    )}
-                    
-                    {status.status === 'Completed' && status.submittedAt && (
-                      <div className="text-sm text-gray-600 mb-2">
-                        Submitted: {status.submittedAt}
-                      </div>
-                    )}
-                    
-                    {status.status === 'Completed' && (
-                          <button
-                            disabled
-                            className="bg-green-600 text-white px-4 py-2 rounded-md cursor-not-allowed text-sm"
-                          >
-                            ✅ Completed
-                          </button>
-                        )}
 
-                        {available && status.status !== 'Completed' && (
-                          <button
-                            onClick={() => handleStartExam(exam._id)}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
-                          >
-                            Start Exam
-                          </button>
+                    {status.status === 'Completed' && (
+                      <>
+                        <div className="text-sm text-gray-600 mb-2">
+                          Score: {status.score}/{status.total}
+                        </div>
+                        {status.submittedAt && (
+                          <div className="text-sm text-gray-600 mb-2">
+                            Submitted: {status.submittedAt}
+                          </div>
                         )}
+                        <button
+                          disabled
+                          className="bg-green-600 text-white px-4 py-2 rounded-md cursor-not-allowed text-sm"
+                        >
+                          ✅ Completed
+                        </button>
+                      </>
+                    )}
 
-                    
+                    {available && status.status !== 'Completed' && (
+                      <button
+                        onClick={() => handleStartExam(exam._id)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        Start Exam
+                      </button>
+                    )}
+
                     {!available && (
                       <div className="text-sm text-gray-500">
-                        {new Date() < new Date(exam.startTime) ? 'Not yet available' : 'Exam ended'}
+                        {new Date() < new Date(exam.startTime)
+                          ? 'Not yet available'
+                          : 'Exam ended'}
                       </div>
                     )}
                   </div>
@@ -271,7 +255,6 @@ function InternExamList() {
         </div>
       )}
 
-      {/* Exam Results Summary */}
       {examResults.length > 0 && (
         <div className="mt-8 bg-gray-50 rounded-lg p-4">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Your Exam Results</h3>

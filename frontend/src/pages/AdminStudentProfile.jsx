@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // ✅ Use environment variable
+
 function ScoreCard({ result, onOpen }) {
   const title = result?.examId?.title || "Exam";
   const type = result?.examId?.examType || result?.examType;
@@ -84,15 +86,18 @@ function AdminStudentProfile() {
   const { studentId } = useParams();
   const [student, setStudent] = useState(null);
   const [results, setResults] = useState([]);
-  const [mode, setMode] = useState("all"); // all | mcq | coding | theory
+  const [mode, setMode] = useState("all");
   const [open, setOpen] = useState(false);
   const [activeResult, setActiveResult] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    // fetch student basic info
-    fetch("http://localhost:5000/api/auth/admin/users", { headers: { Authorization: `Bearer ${token}` } })
+
+    // ✅ Fetch student basic info
+    fetch(`${API_BASE_URL}/api/auth/admin/users`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((r) => r.json())
       .then((list) => {
         const s = Array.isArray(list) ? list.find((u) => u._id === studentId) : null;
@@ -100,8 +105,8 @@ function AdminStudentProfile() {
       })
       .catch(() => {});
 
-    // fetch results
-    fetch(`http://localhost:5000/api/results/student/${studentId}`)
+    // ✅ Fetch results
+    fetch(`${API_BASE_URL}/api/results/student/${studentId}`)
       .then((r) => r.json())
       .then((data) => setResults(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));
@@ -109,33 +114,15 @@ function AdminStudentProfile() {
 
   const filtered = useMemo(() => {
     if (mode === "all") return results;
-    
-    // Debug: Log the first result to understand the data structure
-    if (results.length > 0) {
-      console.log("Sample result structure:", {
-        result: results[0],
-        examType: results[0].examType,
-        examId: results[0].examId,
-        examIdType: results[0].examId?.examType
-      });
-    }
-    
     return results.filter((r) => {
-      // Check both the result's examType and the populated exam's examType
-      const resultExamType = r.examType;
-      const populatedExamType = r?.examId?.examType;
-      const examType = resultExamType || populatedExamType;
-      
-      console.log(`Filtering: resultExamType=${resultExamType}, populatedExamType=${populatedExamType}, final=${examType}, mode=${mode}`);
-      
-      // Handle case-insensitive comparison and ensure we have a valid exam type
+      const examType = r.examType || r?.examId?.examType;
       return examType && examType.toLowerCase() === mode.toLowerCase();
     });
   }, [results, mode]);
 
   const openDetail = async (r) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/results/detail/${r._id}`);
+      const res = await fetch(`${API_BASE_URL}/api/results/detail/${r._id}`);
       const full = await res.json();
       setActiveResult(full);
       setOpen(true);
@@ -203,5 +190,3 @@ function AdminStudentProfile() {
 }
 
 export default AdminStudentProfile;
-
-

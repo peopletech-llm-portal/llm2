@@ -1,4 +1,18 @@
+// src/pages/SchedulePortal.jsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+// Read studentId from logged-in user (stored in localStorage by auth flow)
+const getLoggedInUserId = () => {
+  try {
+    const userRaw = localStorage.getItem("user");
+    if (!userRaw) return null;
+    const user = JSON.parse(userRaw);
+    return user?._id || user?.id || null;
+  } catch (e) {
+    return null;
+  }
+};
 
 function SchedulePortal() {
   const [folders, setFolders] = useState([]);
@@ -14,11 +28,17 @@ function SchedulePortal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
   // Fetch folders and documents
   useEffect(() => {
+    const userId = getLoggedInUserId();
+    if (!userId || !localStorage.getItem("token")) {
+      navigate("/login");
+      return;
+    }
     fetchFolders();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (selectedFolder) {
@@ -28,7 +48,16 @@ function SchedulePortal() {
 
   const fetchFolders = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/schedule/folders");
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/schedule/folders`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch schedule folders: ${res.statusText}`);
+      }
       const data = await res.json();
       setFolders(data);
     } catch (err) {
@@ -38,7 +67,16 @@ function SchedulePortal() {
 
   const fetchDocuments = async (folderId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/${folderId}`);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/schedule/documents/${folderId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch schedule documents: ${res.statusText}`);
+      }
       const data = await res.json();
       setDocuments(data);
     } catch (err) {
@@ -55,21 +93,21 @@ function SchedulePortal() {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Please log in to create folders");
+      navigate("/login");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/schedule/folders", {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/schedule/folders`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name: newFolderName.trim(),
-          description: newFolderDescription.trim()
+          description: newFolderDescription.trim(),
         }),
       });
 
@@ -99,7 +137,7 @@ function SchedulePortal() {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Please log in to upload documents");
+      navigate("/login");
       return;
     }
 
@@ -111,10 +149,10 @@ function SchedulePortal() {
     formData.append("folderId", selectedFolder);
 
     try {
-      const res = await fetch("http://localhost:5000/api/schedule/documents/upload", {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/schedule/documents/upload`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
@@ -138,22 +176,23 @@ function SchedulePortal() {
   };
 
   const handleDeleteFolder = async (folderId) => {
-    if (!confirm("Are you sure you want to delete this folder and all its documents? This action cannot be undone.")) {
+    if (!window.confirm("Are you sure you want to delete this folder and all its documents? This action cannot be undone.")) {
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Please log in to delete folders");
+      navigate("/login");
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/folders/${folderId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/schedule/folders/${folderId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       const data = await res.json();
@@ -173,22 +212,23 @@ function SchedulePortal() {
   };
 
   const handleDeleteDocument = async (documentId) => {
-    if (!confirm("Are you sure you want to delete this document? This action cannot be undone.")) {
+    if (!window.confirm("Are you sure you want to delete this document? This action cannot be undone.")) {
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Please log in to delete documents");
+      navigate("/login");
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/${documentId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/schedule/documents/${documentId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       const data = await res.json();
@@ -205,11 +245,22 @@ function SchedulePortal() {
 
   const handleDownloadDocument = async (documentId, fileName) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/download/${documentId}`);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/schedule/documents/download/${documentId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = fileName;
         document.body.appendChild(a);
@@ -225,12 +276,23 @@ function SchedulePortal() {
   };
 
   const getFileIcon = (fileType) => {
-    switch (fileType) {
-      case 'excel': return '📊';
-      case 'word': return '📝';
-      case 'powerpoint': return '📋';
-      case 'pdf': return '📄';
-      default: return '📄';
+    switch (fileType?.toLowerCase()) {
+      case "excel":
+      case "xlsx":
+      case "xls":
+        return "📊";
+      case "word":
+      case "docx":
+      case "doc":
+        return "📝";
+      case "powerpoint":
+      case "pptx":
+      case "ppt":
+        return "📋";
+      case "pdf":
+        return "📄";
+      default:
+        return "📄";
     }
   };
 
@@ -348,7 +410,9 @@ function SchedulePortal() {
             <div className="bg-white border border-zinc-300 rounded-lg shadow-sm">
               <div className="p-4 border-b border-zinc-300">
                 <h3 className="text-lg font-semibold text-zinc-900">
-                  {selectedFolder ? `Documents in "${folders.find(f => f._id === selectedFolder)?.name}"` : "Select a folder to view documents"}
+                  {selectedFolder
+                    ? `Documents in "${folders.find((f) => f._id === selectedFolder)?.name}"`
+                    : "Select a folder to view documents"}
                 </h3>
               </div>
               <div className="p-4">
@@ -366,7 +430,10 @@ function SchedulePortal() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {documents.map((document) => (
-                      <div key={document._id} className="border border-zinc-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div
+                        key={document._id}
+                        className="border border-zinc-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center">
                             <span className="text-2xl mr-3">{getFileIcon(document.fileType)}</span>
@@ -413,9 +480,7 @@ function SchedulePortal() {
             <h3 className="text-lg font-semibold mb-4">Create New Schedule Folder</h3>
             <form onSubmit={handleCreateFolder} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">
-                  Folder Name
-                </label>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Folder Name</label>
                 <input
                   type="text"
                   value={newFolderName}
@@ -426,9 +491,7 @@ function SchedulePortal() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">
-                  Description (Optional)
-                </label>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Description (Optional)</label>
                 <textarea
                   value={newFolderDescription}
                   onChange={(e) => setNewFolderDescription(e.target.value)}
@@ -469,9 +532,7 @@ function SchedulePortal() {
             <h3 className="text-lg font-semibold mb-4">Upload Schedule Document</h3>
             <form onSubmit={handleUploadDocument} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">
-                  Document Title
-                </label>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Document Title</label>
                 <input
                   type="text"
                   value={uploadTitle}
@@ -482,9 +543,7 @@ function SchedulePortal() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">
-                  Description (Optional)
-                </label>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Description (Optional)</label>
                 <textarea
                   value={uploadDescription}
                   onChange={(e) => setUploadDescription(e.target.value)}
@@ -494,9 +553,7 @@ function SchedulePortal() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">
-                  Document File
-                </label>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Document File</label>
                 <input
                   type="file"
                   accept=".xlsx,.xls,.docx,.doc,.pptx,.ppt,.pdf"
@@ -504,9 +561,7 @@ function SchedulePortal() {
                   className="w-full border border-zinc-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
-                <p className="text-xs text-zinc-500 mt-1">
-                  Supported formats: Excel, Word, PowerPoint, PDF (Max 50MB)
-                </p>
+                <p className="text-xs text-zinc-500 mt-1">Supported formats: Excel, Word, PowerPoint, PDF (Max 50MB)</p>
               </div>
               <div className="flex gap-3 pt-4">
                 <button

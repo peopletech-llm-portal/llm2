@@ -5,10 +5,13 @@ const Dashboard = () => {
   const [exams, setExams] = useState([]);
   const navigate = useNavigate();
 
+  // ✅ Use environment variable for API base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const fetchExams = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/exams");
+        const res = await fetch(`${API_BASE_URL}/api/exams`);
         const data = await res.json();
         setExams(data);
       } catch (err) {
@@ -16,7 +19,7 @@ const Dashboard = () => {
       }
     };
     fetchExams();
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleStartExam = async (id) => {
     // Request fullscreen first (must be from user gesture)
@@ -33,7 +36,7 @@ const Dashboard = () => {
   };
 
   const handleViewResults = () => {
-    // 👇 Replace with logged-in studentId (for now hardcode)
+    // TODO: Replace with dynamic logged-in studentId
     const studentId = "68a84d19ef8bb10e428ffcf0";
     navigate(`/results/${studentId}`);
   };
@@ -70,7 +73,9 @@ const Dashboard = () => {
                 className="border border-gray-700 rounded-xl shadow-lg p-6 bg-gray-900 hover:bg-gray-800 hover:border-gray-600 transition-all duration-300 transform hover:scale-105 animate-fadeInUp hover-lift"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <h2 className="text-xl font-semibold text-white mb-3">{exam.title}</h2>
+                <h2 className="text-xl font-semibold text-white mb-3">
+                  {exam.title}
+                </h2>
                 <p className="text-gray-300 mb-6">
                   {exam.description || "No description available"}
                 </p>

@@ -7,6 +7,9 @@ function OuterDashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // ✅ Use your environment variable for backend API
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     fetchUserProfile();
   }, []);
@@ -14,7 +17,7 @@ function OuterDashboard() {
   const fetchUserProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/profile', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -38,7 +41,11 @@ function OuterDashboard() {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen"><div className="text-xl">Loading...</div></div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
   }
 
   return (

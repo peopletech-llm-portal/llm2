@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
+// ✅ Use API base URL from environment or fallback for local dev
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+
 function ExamStatusTracking() {
   const [exams, setExams] = useState([]);
   const [interns, setInterns] = useState([]);
@@ -14,52 +17,43 @@ function ExamStatusTracking() {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      
-      // Fetch exams
-      const examsResponse = await fetch('http://localhost:5000/api/exams', {
+
+      // ✅ Fetch exams
+      const examsResponse = await fetch(`${API_BASE_URL}/exams`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
-      if (!examsResponse.ok) {
-        throw new Error('Failed to fetch exams');
-      }
+      if (!examsResponse.ok) throw new Error('Failed to fetch exams');
       const examsData = await examsResponse.json();
       setExams(examsData);
 
-      // Fetch interns
-      const internsResponse = await fetch('http://localhost:5000/api/admin/users', {
+      // ✅ Fetch interns
+      const internsResponse = await fetch(`${API_BASE_URL}/admin/users`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
-      if (!internsResponse.ok) {
-        throw new Error('Failed to fetch interns');
-      }
+      if (!internsResponse.ok) throw new Error('Failed to fetch interns');
       const internsData = await internsResponse.json();
       setInterns(internsData.filter(user => user.role === 'INTERN'));
 
-      // Fetch all results
-      const resultsResponse = await fetch('http://localhost:5000/api/results', {
+      // ✅ Fetch all results
+      const resultsResponse = await fetch(`${API_BASE_URL}/results`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
-      if (!resultsResponse.ok) {
-        throw new Error('Failed to fetch results');
-      }
+      if (!resultsResponse.ok) throw new Error('Failed to fetch results');
       const resultsData = await resultsResponse.json();
       setExamResults(resultsData);
 
     } catch (error) {
       console.error('Error fetching data:', error);
-      // Set empty arrays to prevent crashes
+      // Avoid app crash if APIs fail
       setExams([]);
       setInterns([]);
       setExamResults([]);
@@ -70,18 +64,16 @@ function ExamStatusTracking() {
 
   const getExamStatus = (examId, internId) => {
     const result = examResults.find(r => {
-      // Handle both string and object ID comparisons
       const resultExamId = r.examId?._id || r.examId;
       const resultStudentId = r.studentId?._id || r.studentId;
       return resultExamId === examId && resultStudentId === internId;
     });
-    
     if (result) {
       return {
         status: 'Completed',
         score: result.score,
         total: result.totalQuestions,
-        submittedAt: new Date(result.createdAt).toLocaleString()
+        submittedAt: new Date(result.createdAt).toLocaleString(),
       };
     }
     return { status: 'Not Completed', score: 0, total: 0, submittedAt: null };
@@ -97,7 +89,8 @@ function ExamStatusTracking() {
     return {
       completed: completedCount,
       total: totalInterns,
-      percentage: totalInterns > 0 ? Math.round((completedCount / totalInterns) * 100) : 0
+      percentage:
+        totalInterns > 0 ? Math.round((completedCount / totalInterns) * 100) : 0,
     };
   };
 
@@ -114,17 +107,19 @@ function ExamStatusTracking() {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h2 className="text-xl font-semibold text-gray-900 mb-6">Exam Status Tracking</h2>
-      
+
       {/* Exam Selection */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Select Exam to View Status</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Select Exam to View Status
+        </label>
         <select
           value={selectedExam || ''}
           onChange={(e) => setSelectedExam(e.target.value)}
           className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Choose an exam...</option>
-          {exams.map(exam => (
+          {exams.map((exam) => (
             <option key={exam._id} value={exam._id}>
               {exam.title} ({exam.examType.toUpperCase()})
             </option>
@@ -136,7 +131,7 @@ function ExamStatusTracking() {
         <div className="space-y-6">
           {/* Exam Overview */}
           {(() => {
-            const exam = exams.find(e => e._id === selectedExam);
+            const exam = exams.find((e) => e._id === selectedExam);
             const stats = getExamCompletionStats(selectedExam);
             return (
               <div className="bg-gray-50 rounded-lg p-4">
@@ -147,11 +142,15 @@ function ExamStatusTracking() {
                     <div className="text-sm text-gray-600">Completed</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-600">{stats.total - stats.completed}</div>
+                    <div className="text-2xl font-bold text-gray-600">
+                      {stats.total - stats.completed}
+                    </div>
                     <div className="text-sm text-gray-600">Not Completed</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{stats.percentage}%</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {stats.percentage}%
+                    </div>
                     <div className="text-sm text-gray-600">Completion Rate</div>
                   </div>
                 </div>
@@ -182,7 +181,7 @@ function ExamStatusTracking() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {interns.map(intern => {
+                {interns.map((intern) => {
                   const status = getExamStatus(selectedExam, intern._id);
                   return (
                     <tr key={intern._id}>
@@ -193,16 +192,20 @@ function ExamStatusTracking() {
                         {intern.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          status.status === 'Completed' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            status.status === 'Completed'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
                           {status.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {status.status === 'Completed' ? `${status.score}/${status.total}` : '-'}
+                        {status.status === 'Completed'
+                          ? `${status.score}/${status.total}`
+                          : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {status.submittedAt || '-'}
@@ -222,13 +225,17 @@ function ExamStatusTracking() {
                 <span className="font-medium">Total Interns:</span> {interns.length}
               </div>
               <div>
-                <span className="font-medium">Completed:</span> {getExamCompletionStats(selectedExam).completed}
+                <span className="font-medium">Completed:</span>{' '}
+                {getExamCompletionStats(selectedExam).completed}
               </div>
               <div>
-                <span className="font-medium">Not Completed:</span> {getExamCompletionStats(selectedExam).total - getExamCompletionStats(selectedExam).completed}
+                <span className="font-medium">Not Completed:</span>{' '}
+                {getExamCompletionStats(selectedExam).total -
+                  getExamCompletionStats(selectedExam).completed}
               </div>
               <div>
-                <span className="font-medium">Completion Rate:</span> {getExamCompletionStats(selectedExam).percentage}%
+                <span className="font-medium">Completion Rate:</span>{' '}
+                {getExamCompletionStats(selectedExam).percentage}%
               </div>
             </div>
           </div>

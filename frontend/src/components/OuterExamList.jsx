@@ -8,6 +8,9 @@ function OuterExamList() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
+  // ✅ Use environment-based API URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser) {
@@ -20,8 +23,7 @@ function OuterExamList() {
   const fetchExams = async () => {
     try {
       const token = localStorage.getItem('token');
-      // Fetch only OUTER exams
-      const response = await fetch('http://localhost:5000/api/exams?targetRole=OUTER', {
+      const response = await fetch(`${API_BASE_URL}/exams?targetRole=OUTER`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (response.ok) {
@@ -41,7 +43,7 @@ function OuterExamList() {
       if (!studentId) return;
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/results/${studentId}`, {
+      const response = await fetch(`${API_BASE_URL}/results/${studentId}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (response.ok) {
@@ -58,8 +60,6 @@ function OuterExamList() {
       const resultExamId = r.examId?._id || r.examId;
       return String(resultExamId) === String(examId);
     });
-    
-    // Outer users only see "Completed" or "Not Attempted" - NO SCORE
     if (result) {
       return { status: 'Completed' };
     }
@@ -92,13 +92,17 @@ function OuterExamList() {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen"><div className="text-xl">Loading exams...</div></div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-xl">Loading exams...</div>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto p-6">
       <h2 className="text-3xl font-bold mb-6">Available Exams</h2>
-      
+
       {exams.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <p>No exams available at the moment.</p>

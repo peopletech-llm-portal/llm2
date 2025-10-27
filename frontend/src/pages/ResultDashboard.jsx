@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 const STUDENT_ID = "68a84d19ef8bb10e428ffcf0"; // replace with logged-in student id
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // ✅ Render backend URL from .env
 
 function ResultDashboard() {
   const [results, setResults] = useState([]);
@@ -8,7 +9,7 @@ function ResultDashboard() {
 
   useEffect(() => {
     setMessage("Loading results...");
-    fetch(`http://localhost:5000/api/results/${STUDENT_ID}`)
+    fetch(`${API_BASE_URL}/api/results/${STUDENT_ID}`)
       .then((res) => res.json())
       .then((data) => {
         setResults(data);
@@ -53,9 +54,9 @@ function ResultDashboard() {
                   <span className="text-green-400 font-semibold">✅ Completed</span>
                 </div>
               </div>
-              
+
               <p className="text-gray-300 mb-4">{r.exam?.description}</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-blue-900/30 border border-blue-500 p-4 rounded-lg">
                   <p className="text-blue-400 font-semibold mb-1">Score</p>
@@ -63,7 +64,7 @@ function ResultDashboard() {
                     {r.score} / {r.answers.length}
                   </p>
                 </div>
-                
+
                 <div className="bg-purple-900/30 border border-purple-500 p-4 rounded-lg">
                   <p className="text-purple-400 font-semibold mb-1">Percentage</p>
                   <p className="text-white text-2xl font-bold">
@@ -71,7 +72,7 @@ function ResultDashboard() {
                   </p>
                 </div>
               </div>
-              
+
               <p className="text-sm text-gray-400 mt-4 flex items-center">
                 <span className="mr-2">📅</span>
                 Taken on: {new Date(r.createdAt).toLocaleString()}

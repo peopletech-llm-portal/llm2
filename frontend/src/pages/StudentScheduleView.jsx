@@ -20,7 +20,7 @@ function StudentScheduleView() {
 
   const fetchFolders = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/schedule/folders");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/results/${studentId}`);
       const data = await res.json();
       setFolders(data);
     } catch (err) {
@@ -32,7 +32,7 @@ function StudentScheduleView() {
 
   const fetchDocuments = async (folderId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/${folderId}`);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/results/${studentId}`);
       const data = await res.json();
       setDocuments(data);
     } catch (err) {
@@ -42,7 +42,7 @@ function StudentScheduleView() {
 
   const handleDownloadDocument = async (documentId, fileName) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/schedule/documents/download/${documentId}`);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/results/${studentId}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);

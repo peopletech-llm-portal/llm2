@@ -8,10 +8,12 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ✅ Use environment variable for backend
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     const token = localStorage.getItem("token");
-
 
     if (savedUser) setUser(savedUser);
 
@@ -19,24 +21,23 @@ function Profile() {
       try {
         setLoading(true);
         setError("");
-        
 
-        // Fetch all exams with proper error handling and authentication
+        // ✅ Fetch all exams with auth
         try {
-          const examRes = await axios.get("http://localhost:5000/api/exams", {
+          const examRes = await axios.get(`${API_BASE_URL}/api/exams`, {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           });
           if (examRes.data) {
             setExams(examRes.data);
           }
         } catch (examErr) {
           console.error("Failed to fetch exams with auth, trying public route:", examErr);
-          // Fallback to public route if authenticated route fails
+          // ✅ Fallback to public route if authenticated route fails
           try {
-            const publicExamRes = await axios.get("http://localhost:5000/api/exams/public");
+            const publicExamRes = await axios.get(`${API_BASE_URL}/api/exams/public`);
             if (publicExamRes.data) {
               setExams(publicExamRes.data);
             }
@@ -46,20 +47,18 @@ function Profile() {
           }
         }
 
-        // Fetch student results only if logged in
+        // ✅ Fetch student results
         const studentId = savedUser?._id || savedUser?.id;
         if (studentId && token) {
           try {
-            const resultRes = await axios.get(
-              `http://localhost:5000/api/results/${studentId}`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const resultRes = await axios.get(`${API_BASE_URL}/api/results/${studentId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
             if (resultRes.data) {
               setResults(resultRes.data);
             }
           } catch (resultErr) {
             console.error("Failed to fetch results:", resultErr);
-            // Don't set error for results, just log it
             setResults([]);
           }
         } else {
@@ -80,13 +79,11 @@ function Profile() {
 
   if (!user) return <p>Loading user info...</p>;
 
-  // Map results by examId for quick lookup
+  // ✅ Map results by examId
   const resultMap = {};
   results.forEach((r) => {
     const examId = r.examId?._id || r.examId;
-    if (examId) {
-      resultMap[examId] = r;
-    }
+    if (examId) resultMap[examId] = r;
   });
 
   return (
@@ -95,13 +92,20 @@ function Profile() {
       <div className="bg-gray-900 p-6 rounded-xl shadow-lg mb-8 border border-gray-700 hover:border-gray-600 transition-all duration-300 animate-fadeInUp hover-lift">
         <h2 className="text-2xl font-bold text-white mb-2">{user.name}</h2>
         <p className="text-gray-300">Email: {user.email}</p>
-        <p className="text-gray-300">Role: <span className="text-blue-400 font-semibold animate-pulse-slow">{user.role}</span></p>
+        <p className="text-gray-300">
+          Role:{" "}
+          <span className="text-blue-400 font-semibold animate-pulse-slow">
+            {user.role}
+          </span>
+        </p>
       </div>
 
-      {/* Exams with results or Take Exam button */}
+      {/* Exams Section */}
       <h3 className="text-2xl font-semibold mb-6 text-white flex items-center animate-slideInLeft">
-        <span className="mr-2">🎓</span> 
-        <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Available Exams</span>
+        <span className="mr-2">🎓</span>
+        <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          Available Exams
+        </span>
       </h3>
 
       {loading ? (
@@ -121,13 +125,13 @@ function Profile() {
         <div className="grid md:grid-cols-2 gap-6">
           {exams.map((exam, index) => {
             const result = resultMap[exam._id];
-            // Disable access if scheduled and not started yet or already ended
             const now = new Date();
             const startsAt = exam.startTime ? new Date(exam.startTime) : null;
             const endsAt = exam.endTime ? new Date(exam.endTime) : null;
             const notStarted = startsAt && now < startsAt;
             const ended = endsAt && now > endsAt;
             const disabled = notStarted || ended;
+
             return (
               <div
                 key={exam._id}
@@ -135,33 +139,39 @@ function Profile() {
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <h4 className="text-xl font-bold text-white mb-3">{exam.title}</h4>
-                {exam.duration ? (
-                  <p className="text-gray-300 mb-2">⏱️ Duration: <span className="text-blue-400">{exam.duration} mins</span></p>
-                ) : null}
-                <p className="text-gray-300 mb-2">📝 Total Questions: <span className="text-purple-400">{exam.questions.length}</span></p>
+                {exam.duration && (
+                  <p className="text-gray-300 mb-2">
+                    ⏱️ Duration: <span className="text-blue-400">{exam.duration} mins</span>
+                  </p>
+                )}
+                <p className="text-gray-300 mb-2">
+                  📝 Total Questions:{" "}
+                  <span className="text-purple-400">{exam.questions.length}</span>
+                </p>
                 {(startsAt || endsAt) && (
                   <p className="text-sm text-gray-400 mt-2 p-2 bg-gray-800 rounded">
-                    {startsAt ? `🕐 Starts: ${new Date(exam.startTime).toLocaleString()}` : ""}
+                    {startsAt ? `🕐 Starts: ${startsAt.toLocaleString()}` : ""}
                     {startsAt && endsAt ? " | " : ""}
-                    {endsAt ? `⏰ Ends: ${new Date(exam.endTime).toLocaleString()}` : ""}
+                    {endsAt ? `⏰ Ends: ${endsAt.toLocaleString()}` : ""}
                   </p>
                 )}
 
                 {result ? (
-                  // Show result if completed
                   <div className="mt-4 p-4 bg-green-900/30 border border-green-500 rounded-lg">
                     <p className="font-semibold text-green-400 flex items-center">
                       <span className="mr-2">✅</span> Completed
                     </p>
                     <p className="text-gray-300 mt-1">
-                      Score: <span className="text-green-400 font-semibold">{result.score}/{result.totalQuestions}</span>
+                      Score:{" "}
+                      <span className="text-green-400 font-semibold">
+                        {result.score}/{result.totalQuestions}
+                      </span>
                     </p>
                     <p className="text-sm text-gray-400 mt-1">
                       Taken on: {new Date(result.createdAt).toLocaleString()}
                     </p>
                   </div>
                 ) : (
-                  // Show Take Exam button if not completed
                   <button
                     onClick={() => !disabled && (window.location.href = `/exam/${exam._id}`)}
                     disabled={disabled}

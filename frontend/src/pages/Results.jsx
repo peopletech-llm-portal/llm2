@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // ✅ Use env variable for backend URL
+
 function Results() {
   const { studentId } = useParams(); // 👈 get studentId from URL
   const [results, setResults] = useState([]);
@@ -9,7 +11,7 @@ function Results() {
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/results/${studentId}`);
+        const res = await fetch(`${API_BASE_URL}/api/results/${studentId}`);
         const data = await res.json();
         setResults(data);
       } catch (error) {

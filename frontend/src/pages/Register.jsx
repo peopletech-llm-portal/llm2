@@ -6,6 +6,9 @@ function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "student" });
   const [message, setMessage] = useState("");
 
+  // ✅ Use your environment variable
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -13,7 +16,7 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -72,13 +75,22 @@ function Register() {
           </div>
           <div>
             <label className="block text-sm text-zinc-700 mb-1">Role</label>
-            <select name="role" onChange={handleChange} className="w-full bg-white border border-zinc-300 text-zinc-900 p-3 rounded focus:outline-none">
+            <select
+              name="role"
+              onChange={handleChange}
+              className="w-full bg-white border border-zinc-300 text-zinc-900 p-3 rounded focus:outline-none"
+            >
               <option value="student">Student</option>
               <option value="admin">Admin</option>
             </select>
           </div>
 
-          <button type="submit" className="w-full bg-black text-white font-medium py-3 rounded hover:bg-zinc-800 transition">Create Account</button>
+          <button
+            type="submit"
+            className="w-full bg-black text-white font-medium py-3 rounded hover:bg-zinc-800 transition"
+          >
+            Create Account
+          </button>
         </form>
         {message && <p className="mt-4 text-center text-red-600">{message}</p>}
       </div>
