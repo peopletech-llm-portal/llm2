@@ -16,5 +16,23 @@
     "password": "$2b$10$zVhso2YMCBHmc/TtkJMmbuZDMmrr3UEsE5XxG4tzNM9nXgU/T4R0q",
     "createdBy": "68f75dcdd8f6e3160c92371e",
     "createdAt": "2025-10-22T04:22:06.289Z"
+  },
+  {
+    "employeeId": "T1917",
+    "fullName": "sritej",
+    "username": "sritej",
+    "contactNumber": "8978907531",
+    "password": "$2b$10$QNmU/qWayT55XPDIQeb7yuMhOjvAdd61HtuLwZTj6XgfPqZk6kxHK",
+    "createdBy": "68f768c7c19182865690172b",
+    "createdAt": "2025-10-23T05:29:52.195Z"
+  },
+  {
+    "employeeId": "T1922",
+    "fullName": "JanakiRam",
+    "username": "JanakiRam",
+    "contactNumber": "7993955122",
+    "password": "$2b$10$cEUnF0cmEcmVxJgWU7Ozle8sTXoCIrFHz.ukoeqrjpJw1uU68O9JS",
+    "createdBy": "68f768c7c19182865690172b",
+    "createdAt": "2025-10-24T08:55:32.388Z"
   }
 ]

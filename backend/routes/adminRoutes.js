@@ -37,6 +37,11 @@ router.get("/users", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), a
       query.role = 'INTERN';
     }
     
+    // Main admins can see all users except other main admins
+    if (currentUser.role === 'MAIN_ADMIN') {
+      query.role = { $in: ['SUB_ADMIN', 'INTERN', 'OUTER'] };
+    }
+    
     const users = await User.find(query).select("-password").populate('createdBy', 'name email');
     res.json(users);
   } catch (error) {
@@ -72,7 +77,10 @@ router.put("/users/:id", authMiddleware, canManageUser, async (req, res) => {
       companyEmail, 
       personalEmail, 
       contactNumber, 
-      username 
+      username,
+      gender,
+      phoneNumber,
+      dateOfBirth
     } = req.body;
 
     const user = await User.findById(req.params.id);
@@ -120,6 +128,14 @@ router.put("/users/:id", authMiddleware, canManageUser, async (req, res) => {
       }
     }
 
+    // Check for duplicate phone number for outer users
+    if (phoneNumber && phoneNumber !== user.phoneNumber) {
+      const existingPhoneNumber = await User.findOne({ phoneNumber, _id: { $ne: user._id } });
+      if (existingPhoneNumber) {
+        return res.status(400).json({ message: "Phone number already registered" });
+      }
+    }
+
     // Update basic fields
     if (name) user.name = name;
     if (email) user.email = email;
@@ -136,6 +152,13 @@ router.put("/users/:id", authMiddleware, canManageUser, async (req, res) => {
       if (personalEmail) user.personalEmail = personalEmail;
       if (contactNumber) user.contactNumber = contactNumber;
       if (username) user.username = username;
+    }
+
+    // Update outer-specific fields
+    if (user.role === 'OUTER') {
+      if (gender) user.gender = gender;
+      if (phoneNumber) user.phoneNumber = phoneNumber;
+      if (dateOfBirth) user.dateOfBirth = dateOfBirth;
     }
 
     await user.save();

@@ -15,7 +15,10 @@ function MainAdminDashboard() {
     companyEmail: '',
     personalEmail: '',
     contactNumber: '',
-    username: ''
+    username: '',
+    gender: '',
+    phoneNumber: '',
+    dateOfBirth: ''
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -66,13 +69,29 @@ function MainAdminDashboard() {
       
       const method = editingUser ? 'PUT' : 'POST';
       
+      // Prepare data for submission
+      let submitData = { ...formData };
+      
+      // For Outer users, format DOB and generate password
+      if (formData.role === 'OUTER' && formData.dateOfBirth) {
+        // Convert date from YYYY-MM-DD to dd-mm-yyyy format
+        const date = new Date(formData.dateOfBirth);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        submitData.dateOfBirth = `${day}-${month}-${year}`;
+        
+        // Generate numeric password (ddmmyyyy)
+        submitData.password = `${day}${month}${year}`;
+      }
+      
       const response = await fetch(url, {
         method,
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       if (response.ok) {
@@ -87,7 +106,10 @@ function MainAdminDashboard() {
           companyEmail: '',
           personalEmail: '',
           contactNumber: '',
-          username: ''
+          username: '',
+          gender: '',
+          phoneNumber: '',
+          dateOfBirth: ''
         });
         fetchUsers();
       } else {
@@ -123,7 +145,10 @@ function MainAdminDashboard() {
       companyEmail: user.companyEmail || '',
       personalEmail: user.personalEmail || '',
       contactNumber: user.contactNumber || '',
-      username: user.username || ''
+      username: user.username || '',
+      gender: user.gender || '',
+      phoneNumber: user.phoneNumber || '',
+      dateOfBirth: user.dateOfBirth || ''
     });
     setShowCreateForm(true);
   };
@@ -222,8 +247,9 @@ function MainAdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.role === 'main_admin' ? 'bg-red-100 text-red-800' :
-                        user.role === 'sub_admin' ? 'bg-yellow-100 text-yellow-800' :
+                        user.role === 'MAIN_ADMIN' ? 'bg-red-100 text-red-800' :
+                        user.role === 'SUB_ADMIN' ? 'bg-yellow-100 text-yellow-800' :
+                        user.role === 'OUTER' ? 'bg-purple-100 text-purple-800' :
                         'bg-green-100 text-green-800'
                       }`}>
                         {user.role.replace('_', ' ').toUpperCase()}
@@ -325,6 +351,7 @@ function MainAdminDashboard() {
                   >
                     <option value="SUB_ADMIN">Sub Admin</option>
                     <option value="INTERN">Intern</option>
+                    <option value="OUTER">Outer</option>
                   </select>
                 </div>
 
@@ -392,6 +419,60 @@ function MainAdminDashboard() {
                   />
                   {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
                 </div>
+                  </>
+                )}
+
+                {formData.role === 'OUTER' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                      <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
+                        className={`w-full border ${errors.phoneNumber ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        required
+                      />
+                      {errors.phoneNumber && <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                      <div className="relative">
+                        <input
+                          type="date"
+                          name="dateOfBirth"
+                          value={formData.dateOfBirth}
+                          onChange={handleInputChange}
+                          max={new Date().toISOString().split("T")[0]}
+                          className={`w-full border ${errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'} rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                          required
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      </div>
+                      {errors.dateOfBirth && <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>}
+                    </div>
                   </>
                 )}
 

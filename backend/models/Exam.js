@@ -24,6 +24,8 @@ const examSchema = new mongoose.Schema({
   endTime: { type: Date },
   // Duration in minutes for timer-based auto submit
   duration: { type: Number },
+  // Target role for the exam (INTERN or OUTER)
+  targetRole: { type: String, enum: ["INTERN", "OUTER"], default: "INTERN" },
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -9,9 +9,27 @@ const router = express.Router();
 // 🔹 Create new exam (with optional scheduling) - Only Main Admin and Sub Admin
 router.post("/", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), async (req, res) => {
   try {
-    const { title, questions, startTime, endTime, duration, examType } = req.body;
+    const { title, questions, startTime, endTime, duration, examType, targetRole } = req.body;
+    
+    // Determine target role based on user role
+    let finalTargetRole = targetRole;
+    if (req.user.role === 'SUB_ADMIN') {
+      // Sub Admins can only create exams for Interns
+      finalTargetRole = 'INTERN';
+    } else if (req.user.role === 'MAIN_ADMIN') {
+      // Main Admins can create exams for both Interns and Outers
+      finalTargetRole = targetRole || 'INTERN';
+    }
 
-    const exam = new Exam({ title, questions, startTime, endTime, duration, examType });
+    const exam = new Exam({ 
+      title, 
+      questions, 
+      startTime, 
+      endTime, 
+      duration, 
+      examType, 
+      targetRole: finalTargetRole 
+    });
     await exam.save();
 
     res.status(201).json({ message: "Exam created successfully ✅", exam });
@@ -20,10 +38,22 @@ router.post("/", authMiddleware, requireRole(['MAIN_ADMIN', 'SUB_ADMIN']), async
   }
 });
 
-// 🔹 Get all exams - All authenticated users can view
+// 🔹 Get all exams - All authenticated users can view (with role-based filtering)
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const exams = await Exam.find();
+    let query = {};
+    
+    // Filter exams based on user role
+    if (req.user.role === 'INTERN') {
+      // Interns can only see exams targeted for Interns
+      query.targetRole = 'INTERN';
+    } else if (req.user.role === 'OUTER') {
+      // Outers can only see exams targeted for Outers
+      query.targetRole = 'OUTER';
+    }
+    // Admins and Sub Admins can see all exams (no filtering)
+    
+    const exams = await Exam.find(query);
     res.json(exams);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -33,6 +63,7 @@ router.get("/", authMiddleware, async (req, res) => {
 // 🔹 Get all exams - Public access for students (fallback route)
 router.get("/public", async (req, res) => {
   try {
+    // For public access, show all exams (no role filtering)
     const exams = await Exam.find();
     res.json(exams);
   } catch (error) {

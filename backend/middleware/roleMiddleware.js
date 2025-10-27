@@ -46,6 +46,12 @@ export const canManageUser = async (req, res, next) => {
       return next();
     }
 
+    // Main Admin can manage Outer users
+    if (currentUser.role === 'MAIN_ADMIN' && targetUser.role === 'OUTER') {
+      req.targetUser = targetUser;
+      return next();
+    }
+
     // Users can manage themselves
     if (currentUser._id.toString() === targetUser._id.toString()) {
       req.targetUser = targetUser;
@@ -75,8 +81,13 @@ export const canCreateRole = (req, res, next) => {
     return next();
   }
 
+  // Main Admin can create Outer users
+  if (currentUserRole === 'MAIN_ADMIN' && role === 'OUTER') {
+    return next();
+  }
+
   return res.status(403).json({ 
     message: "You don't have permission to create users with this role",
-    allowed: currentUserRole === 'SUB_ADMIN' ? ['INTERN'] : []
+    allowed: currentUserRole === 'SUB_ADMIN' ? ['INTERN'] : currentUserRole === 'MAIN_ADMIN' ? ['SUB_ADMIN', 'INTERN', 'OUTER'] : []
   });
 };
