@@ -142,8 +142,18 @@ router.post("/register", authMiddleware, canCreateRole, async (req, res) => {
       }
     });
   } catch (error) {
+    // Robust duplicate key/validation handling
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists` });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error(error); // Always log for backend debugging
     res.status(500).json({ message: "Server error", error: error.message });
   }
+  
 });
 
 // =======================

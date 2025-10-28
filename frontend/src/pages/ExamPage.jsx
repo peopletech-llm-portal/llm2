@@ -1,5 +1,5 @@
 // src/pages/ExamPage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { runCodeWithJudge0, judge0LanguageIdFor } from "../services/judge0";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -26,6 +26,8 @@ function ExamPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState("");
   const [violationCount, setViolationCount] = useState(0);
+  const [altSpaceCount, setAltSpaceCount] = useState(0);
+  const [screenshotCount, setScreenshotCount] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
   const [violationReason, setViolationReason] = useState("");
   const [running, setRunning] = useState(false);
@@ -34,7 +36,10 @@ function ExamPage() {
   const [runningSamples, setRunningSamples] = useState(false);
   const [sampleResults, setSampleResults] = useState([]);
   const [currentTheoryIndex, setCurrentTheoryIndex] = useState(0);
+  const continueButtonRef = useRef(null);
+
   const navigate = useNavigate();
+
 
   // 🚫 Prevent re-entry after auto-submit or violation
   useEffect(() => {
@@ -90,16 +95,25 @@ function ExamPage() {
   }, [exam]);
 
   // Attempt to enter fullscreen on mount and track fullscreen state
-  useEffect(() => {
+   // Attempt to enter fullscreen on mount and track fullscreen state
+   useEffect(() => {
     let lastFullscreen = false;
 
     const onFsChange = () => {
-      const fsElement = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+      const fsElement =
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement;
       const nowFs = !!fsElement;
+
       // Detect exiting fullscreen (counts as a violation if was previously in fullscreen)
       if (lastFullscreen && !nowFs) {
         incrementViolation("Exited fullscreen");
       }
+
+
+
       lastFullscreen = nowFs;
       setIsFullscreen(nowFs);
     };
@@ -135,6 +149,7 @@ function ExamPage() {
     };
   }, []);
 
+
   // Detect tab switches or window hiding
   useEffect(() => {
     const onVisibility = () => {
@@ -146,10 +161,186 @@ function ExamPage() {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
+
+    // Show warning message - user must manually click Continue
+  // Browser security prevents automatic fullscreen re-entry
+  useEffect(() => {
+    // No automatic re-entry - user must click Continue button
+  }, [showWarning]);
+
+// Detect window switching (Copilot, Alt+Tab, other apps) via focus loss
+useEffect(() => {
+  const handleVisibilityChange = () => {
+    if (document.hidden && !showWarning) {
+      setAltSpaceCount((prev) => {
+        const newCount = prev + 1;
+        
+        if (newCount >= 2) {
+          // Auto-submit on 2nd window switch
+          const sid = getLoggedInStudentId();
+          localStorage.setItem(`exam_attempted_${id}_${sid}`, "true");
+          
+          setViolationReason(`Window switching detected ${newCount} times - Auto-submitting exam`);
+          
+          setTimeout(() => {
+            handleSubmit(true);
+          }, 1000);
+        } else {
+          // Show warning on 1st window switch
+          setViolationReason(`Window switching detected! This includes opening Copilot (Alt+Space). You have ${2 - newCount} more attempt before auto-submission.`);
+          setShowWarning(true);
+        }
+        
+        return newCount;
+      });
+    }
+  };
+
+   // Unified handler for screenshots (Win+PrtScn, Win+Shift+S cause blur)
+   const handleBlur = () => {
+    if (!document.hidden && !showWarning) {
+      // Blur without tab switch = likely screenshot tool
+      setScreenshotCount((prev) => {
+        const newCount = prev + 1;
+        
+        // Auto-submit on 1st screenshot attempt
+        const sid = getLoggedInStudentId();
+        localStorage.setItem(`exam_attempted_${id}_${sid}`, "true");
+        
+        setViolationReason(`Screenshot tool detected - Auto-submitting exam`);
+        
+        setTimeout(() => {
+          handleSubmit(true);
+        }, 500);
+        
+        return newCount;
+      });
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('blur', handleBlur);
+
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('blur', handleBlur);
+  };
+}, [showWarning, id]);
+
+        // Disable copy, cut, and paste
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Block Ctrl+C, Ctrl+X, Ctrl+V (and Cmd on Mac)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'x' || e.key === 'v' || e.key === 'C' || e.key === 'X' || e.key === 'V')) {
+        e.preventDefault();
+        setViolationReason("Copy/Paste is disabled during the exam");
+        setShowWarning(true);
+        incrementViolation("Attempted to copy/paste");
+      }
+            // Block Alt+F4 (close window)
+            if (e.altKey && e.key === 'F4') {
+              e.preventDefault();
+              setViolationReason("Alt+F4 is disabled during the exam");
+              setShowWarning(true);
+              incrementViolation("Attempted to close window");
+            }
+            
+            // Block PrintScreen key (catches PrtScn, Ctrl+PrtScn, Alt+PrtScn)
+            if (e.key === 'PrintScreen' || e.keyCode === 44 || e.code === 'PrintScreen') {
+              e.preventDefault();
+              
+              const sid = getLoggedInStudentId();
+              localStorage.setItem(`exam_attempted_${id}_${sid}`, "true");
+              
+              setViolationReason(`Screenshot detected (PrintScreen key) - Auto-submitting exam`);
+              
+              setTimeout(() => {
+                handleSubmit(true);
+              }, 500);
+              
+              return false;
+            }
+      
+      // Block Alt+Tab (switch windows)
+      if (e.altKey && e.key === 'Tab') {
+        e.preventDefault();
+        setViolationReason("Alt+Tab is disabled during the exam");
+        setShowWarning(true);
+        incrementViolation("Attempted to switch windows");
+      }
+      
+      // Block Alt+F4 (close window)
+      if (e.altKey && e.key === 'F4') {
+        e.preventDefault();
+        setViolationReason("Alt+F4 is disabled during the exam");
+        setShowWarning(true);
+        incrementViolation("Attempted to close window");
+      }
+    };
+
+
+      const handleCopy = (e) => {
+        e.preventDefault();
+        setViolationReason("Copying is disabled during the exam");
+        setShowWarning(true);
+        incrementViolation("Attempted to copy");
+      };
+
+      const handleCut = (e) => {
+        e.preventDefault();
+        setViolationReason("Cutting is disabled during the exam");
+        setShowWarning(true);
+        incrementViolation("Attempted to cut");
+      };
+
+      const handlePaste = (e) => {
+        e.preventDefault();
+        setViolationReason("Pasting is disabled during the exam");
+        setShowWarning(true);
+        incrementViolation("Attempted to paste");
+      };
+
+         // Add event listeners - USE CAPTURE PHASE for system shortcuts
+      document.addEventListener('keydown', handleKeyDown, true);  // true = capture phase
+      window.addEventListener('keydown', handleKeyDown, true);    // Also at window level
+      document.addEventListener('copy', handleCopy);
+      document.addEventListener('cut', handleCut);
+      document.addEventListener('paste', handlePaste);
+
+      return () => {
+        // Cleanup
+        document.removeEventListener('keydown', handleKeyDown, true);
+        window.removeEventListener('keydown', handleKeyDown, true);  
+        document.removeEventListener('copy', handleCopy);
+        document.removeEventListener('cut', handleCut);
+        document.removeEventListener('paste', handlePaste);
+      };
+    }, []);
+
+     // Block right-click context menu (prevents screenshot via context menu)
+  // useEffect(() => {
+  //   const handleContextMenu = (e) => {
+  //     e.preventDefault();
+  //     setViolationReason("Right-click is disabled during the exam");
+  //     setShowWarning(true);
+  //     incrementViolation("Attempted right-click");
+  //     return false;
+  //   };
+
+  //   document.addEventListener('contextmenu', handleContextMenu);
+
+  //   return () => {
+  //     document.removeEventListener('contextmenu', handleContextMenu);
+  //   };
+  // }, []);
+
+  
+    // Countdown timer
+
   const incrementViolation = (reason) => {
     setViolationCount((prev) => {
         const next = prev + 1;
-        if (next >= 2) {
+        if (next >= 3) {
             // Mark exam permanently attempted
             const sid = getLoggedInStudentId();
             localStorage.setItem(`exam_attempted_${id}_${sid}`, "true");
@@ -387,18 +578,32 @@ function ExamPage() {
           <div className="bg-gray-900 p-6 rounded-xl shadow-2xl max-w-sm w-full text-center border border-red-500">
             <div className="text-4xl mb-4">⚠️</div>
             <h3 className="text-xl font-semibold mb-3 text-red-400">Warning</h3>
-            <p className="text-sm mb-6 text-gray-300">{violationReason}. You have {Math.max(0, 1 - violationCount)} warnings left before auto-submission.</p>
-            <div className="flex items-center justify-center space-x-3">
-              <button
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
+            <p className="text-lg text-gray-200 mb-2">
+                {violationReason}
+                {!violationReason.includes("Alt+Space") && 
+                  `. You have ${Math.max(0, 2 - violationCount)} warnings left before auto-submission.`
+                }
+              </p>
+              
+              {/* Show Alt+Space specific count */}
+              {altSpaceCount > 0 && (
+                <p className="text-sm text-yellow-400 mt-2">
+                  Alt+Space attempts: {altSpaceCount}/2
+                </p>
+              )}
+          <div className="flex items-center justify-center space-x-3">
+            <button
+                ref={continueButtonRef}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 animate-pulse"
                 onClick={() => {
                   setShowWarning(false);
-                  // Try to re-enter fullscreen if not in fullscreen
-                  if (!isFullscreen) enterFullscreen();
+                  enterFullscreen(); // Direct call - user clicked so it will work
                 }}
               >
-                Continue Exam
+                Click to Continue Exam in Fullscreen
               </button>
+
+
             </div>
           </div>
         </div>
